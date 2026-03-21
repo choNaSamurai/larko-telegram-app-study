@@ -6,6 +6,11 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { WorkerDashboard } from './components/WorkerDashboard';
 import { OrderDetails } from './components/OrderDetails';
 import { NewOrder } from './components/NewOrder';
+import { WorkerBalance } from './components/WorkerBalance';
+import { TeamList } from './components/TeamList';
+import { WorkerCard } from './components/WorkerCard';
+import { FinanceDashboard } from './components/FinanceDashboard';
+import { Settings } from './components/Settings';
 import { dataService } from './services/dataService';
 
 const LoadingScreen = () => (
@@ -24,7 +29,6 @@ function App() {
     if (isReady && user) {
       const fetchRole = async () => {
         const { data, error } = await dataService.getUserRole(user.id);
-
         if (data) {
           setRole(data.role as 'admin' | 'worker');
         } else if (error) {
@@ -33,10 +37,8 @@ function App() {
         }
         setLoading(false);
       };
-
       fetchRole();
     } else if (isReady && !user) {
-      // Dev mode outside Telegram
       setRole('admin');
       setLoading(false);
     }
@@ -55,6 +57,10 @@ function App() {
                 <Routes>
                   <Route index element={<AdminDashboard />} />
                   <Route path="orders/new" element={<NewOrder />} />
+                  <Route path="workers" element={<TeamList />} />
+                  <Route path="workers/:id" element={<WorkerCard />} />
+                  <Route path="finance" element={<FinanceDashboard />} />
+                  <Route path="settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/admin" />} />
                 </Routes>
               </MainLayout>
@@ -69,6 +75,7 @@ function App() {
                 <Routes>
                   <Route index element={<WorkerDashboard />} />
                   <Route path="orders/:id" element={<OrderDetails />} />
+                  <Route path="balance" element={<WorkerBalance />} />
                   <Route path="*" element={<Navigate to="/worker" />} />
                 </Routes>
               </MainLayout>

@@ -1,33 +1,31 @@
 import React from 'react';
-import { Package, Wrench, Users, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PlusCircle, Clock, Users, BarChart3, Settings } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { label: 'New Order', icon: Package, color: 'bg-blue-500', path: '/admin/orders/new' },
-    { label: 'In Progress', icon: Wrench, color: 'bg-yellow-500', path: '/admin/orders', count: 5 },
-    { label: 'Team (Workers)', icon: Users, color: 'bg-green-500', path: '/admin/workers', count: 10 },
-    { label: 'Finance', icon: Wallet, color: 'bg-purple-500', path: '/admin/finance' },
+    { icon: <PlusCircle size={24} />, label: 'New Order', color: 'bg-indigo-50 text-indigo-600', path: '/admin/orders/new' },
+    { icon: <Clock size={24} />, label: 'In Progress', color: 'bg-amber-50 text-amber-600', path: '/admin/orders' },
+    { icon: <Users size={24} />, label: 'Team', color: 'bg-blue-50 text-blue-600', path: '/admin/workers', count: 2 },
+    { icon: <BarChart3 size={24} />, label: 'Finance', color: 'bg-emerald-50 text-emerald-600', path: '/admin/finance' },
+    { icon: <Settings size={24} />, label: 'Catalog', color: 'bg-slate-50 text-slate-600', path: '/admin/settings' },
   ];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-slate-800">Main Menu</h2>
       <div className="grid grid-cols-2 gap-4">
-        {menuItems.map((item) => (
+        {menuItems.map((item, index) => (
           <button
-            key={item.label}
+            key={index}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-transform"
+            className={`flex flex-col items-center justify-center p-6 rounded-3xl ${item.color} shadow-sm border border-slate-100/50 active:scale-95 transition-all w-full text-center`}
           >
-            <div className={`p-3 rounded-xl ${item.color} text-white mb-3 shadow-md`}>
-              <item.icon size={28} />
-            </div>
-            <span className="text-sm font-bold text-slate-700">{item.label}</span>
-            {item.count !== undefined && (
-              <span className="mt-1 text-[10px] font-medium px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+            <div className="mb-3">{item.icon}</div>
+            <span className="font-bold text-sm">{item.label}</span>
+            {'count' in item && (
+              <span className="mt-1 text-[10px] font-medium px-2 py-0.5 bg-white/50 rounded-full">
                 {item.count} items
               </span>
             )}
