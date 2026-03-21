@@ -4,15 +4,31 @@ import { PieChart, TrendingUp, Wallet, ArrowDownCircle, Users } from 'lucide-rea
 
 export const FinanceDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
+  const [workerStats, setWorkerStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadStats = async () => {
-      const { data } = await dataService.getFinanceStats();
-      setStats(data);
+    const loadData = async () => {
+      const [financeRes, workersRes] = await Promise.all([
+        dataService.getFinanceStats(),
+        dataService.getWorkers()
+      ]);
+      
+      setStats(financeRes.data);
+      
+      if (workersRes.data) {
+        const individualStats = await Promise.all(
+          workersRes.data.map(async (w: any) => {
+            const { data } = await dataService.getBalance(w.telegram_id);
+            return { ...w, ...data };
+          })
+        );
+        setWorkerStats(individualStats);
+      }
+      
       setLoading(false);
     };
-    loadStats();
+    loadData();
   }, []);
 
   if (loading) return (
@@ -90,16 +106,24 @@ export const FinanceDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-default)]">
-              <tr className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
-                <td className="px-6 py-5 font-black text-[var(--text-primary)]">Ivan S.</td>
-                <td className="px-6 py-5 text-right font-mono-numbers text-[var(--text-secondary)]">12,400</td>
-                <td className="px-6 py-5 text-right font-mono-numbers font-black text-[var(--accent-primary)]">4,200</td>
-              </tr>
-              <tr className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
-                <td className="px-6 py-5 font-black text-[var(--text-primary)]">Petro K.</td>
-                <td className="px-6 py-5 text-right font-mono-numbers text-[var(--text-secondary)]">15,600</td>
-                <td className="px-6 py-5 text-right font-mono-numbers font-black text-[var(--accent-primary)]">6,100</td>
-              </tr>
+              {workerStats.map((w: any) => (
+                <tr key={w.id} className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+                  <td className="px-6 py-5 font-black text-[var(--text-primary)]">{w.full_name}</td>
+                  <td className="px-6 py-5 text-right font-mono-numbers text-[var(--text-secondary)]">
+                    {w.earned?.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-5 text-right font-mono-numbers font-black text-[var(--accent-primary)]">
+                    {w.remaining?.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {workerStats.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-6 py-10 text-center text-[10px] uppercase font-black text-[var(--text-secondary)]">
+                    No worker records found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

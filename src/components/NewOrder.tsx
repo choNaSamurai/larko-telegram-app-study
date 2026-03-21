@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, ShoppingBag, Hash, Users, Calendar, CreditCard, ChevronDown } from 'lucide-react';
+import { dataService } from '../services/dataService';
 
 export const NewOrder: React.FC = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [productTypes, setProductTypes] = useState<any[]>([]);
+  const [workers, setWorkers] = useState<any[]>([]);
+  
   const [formData, setFormData] = useState({
     orderNumber: '',
     productType: '',
@@ -13,21 +18,29 @@ export const NewOrder: React.FC = () => {
     paymentModel: 'per_unit',
     notes: ''
   });
-  const productTypes = [
-    { id: '1', name: 'Welding', rate: 150 },
-    { id: '2', name: 'Milling', rate: 200 },
-    { id: '3', name: 'Assembly', rate: 100 },
-  ];
 
-  const workers = [
-    { id: 'w1', name: 'Ivan S.' },
-    { id: 'w2', name: 'Petro K.' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      const [pts, ws] = await Promise.all([
+        dataService.getProductTypes(),
+        dataService.getWorkers()
+      ]);
+      if (pts.data) setProductTypes(pts.data);
+      if (ws.data) setWorkers(ws.data);
+    };
+    fetchData();
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Order created:', formData);
-    navigate('/admin/orders');
+    setLoading(true);
+    const { error } = await dataService.createOrder(formData);
+    if (!error) {
+      navigate('/admin/orders');
+    } else {
+      console.error('Error creating order:', error);
+      setLoading(false);
+    }
   };
 
   return (
@@ -155,9 +168,14 @@ export const NewOrder: React.FC = () => {
 
         <button 
           type="submit"
-          className="btn-premium w-full !h-16 flex items-center justify-center gap-3 text-lg font-black uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none transition-all"
+          disabled={loading}
+          className="btn-premium w-full !h-16 flex items-center justify-center gap-3 text-lg font-black uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Save size={24} strokeWidth={3} /> Commit Task
+          {loading ? (
+            <div className="w-6 h-6 border-4 border-[var(--bg-primary)] border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <><Save size={24} strokeWidth={3} /> Commit Task</>
+          )}
         </button>
       </form>
     </div>

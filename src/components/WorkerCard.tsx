@@ -10,22 +10,53 @@ export const WorkerCard: React.FC = () => {
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [showAdvancePopup, setShowAdvancePopup] = useState(false);
 
-  useEffect(() => {
-    const loadWorker = async () => {
-      const { data } = await dataService.getWorkers();
-      const found = data?.find((w: any) => w.id === id);
-      setWorker(found);
-    };
-    loadWorker();
-  }, [id]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleIssueAdvance = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowAdvancePopup(false);
-    setAdvanceAmount('');
+  const loadData = async () => {
+    if (!id) return;
+    const [workersRes, ordersRes, historyRes] = await Promise.all([
+      dataService.getWorkers(),
+      dataService.getOrders(),
+      dataService.getTransactionHistory(id)
+    ]);
+    
+    const workerData = workersRes.data?.find((w: any) => w.id === id);
+    if (workerData && ordersRes.data) {
+      const activeCount = ordersRes.data.filter((o: any) => 
+        o.assigned_worker_id === id && o.status !== 'done'
+      ).length;
+      setWorker({ ...workerData, active_orders: activeCount });
+    }
+    
+    if (historyRes.data) {
+      setHistory(historyRes.data);
+    }
+    setLoading(false);
   };
 
-  if (!worker) return (
+  useEffect(() => {
+    loadData();
+  }, [id]);
+
+  const handleIssueAdvance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !advanceAmount) return;
+    
+    const { error } = await dataService.issueAdvance({
+      worker_id: id,
+      amount: parseFloat(advanceAmount),
+      description: 'Cash Advance'
+    });
+
+    if (!error) {
+      setShowAdvancePopup(false);
+      setAdvanceAmount('');
+      loadData(); // Refresh history and balance
+    }
+  };
+
+  if (loading || !worker) return (
     <div className="flex flex-col items-center justify-center p-20 gap-4">
       <div className="w-10 h-10 border-4 border-[var(--bg-tertiary)] border-t-[var(--accent-primary)] rounded-full animate-spin"></div>
       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Finding Specialist...</span>
@@ -100,26 +131,31 @@ export const WorkerCard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-default)]/50">
-              <tr className="hover:bg-[var(--bg-tertiary)] transition-colors">
-                <td className="px-6 py-5 text-[10px] font-black text-[var(--text-secondary)] font-mono-numbers uppercase">MAR 20</td>
-                <td className="px-6 py-5">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest mb-0.5">Order #1024</span>
-                    <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest opacity-60">Log: Welding</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-right font-black text-[var(--status-success)] font-mono-numbers text-sm">+1,200</td>
-              </tr>
-              <tr className="hover:bg-[var(--bg-tertiary)] transition-colors">
-                <td className="px-6 py-5 text-[10px] font-black text-[var(--text-secondary)] font-mono-numbers uppercase">MAR 18</td>
-                <td className="px-6 py-5">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest mb-0.5">Payout</span>
-                    <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest opacity-60">ID: Cash Advance</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-right font-black text-[var(--status-error)] font-mono-numbers text-sm">-2,000</td>
-              </tr>
+              {history.map((item) => (
+                <tr key={item.id} className="hover:bg-[var(--bg-tertiary)] transition-colors">
+                  <td className="px-6 py-5 text-[10px] font-black text-[var(--text-secondary)] font-mono-numbers uppercase">
+                    {new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest mb-0.5">{item.narrative}</span>
+                      <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest opacity-60">{item.subtext}</span>
+                    </div>
+                  </td>
+                  <td className={`px-6 py-5 text-right font-black font-mono-numbers text-sm ${
+                    item.type === 'income' ? 'text-[var(--status-success)]' : 'text-[var(--status-error)]'
+                  }`}>
+                    {item.impact > 0 ? '+' : ''}{item.impact.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {history.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-6 py-10 text-center text-[10px] uppercase font-black text-[var(--text-secondary)]">
+                    No transactions recorded
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

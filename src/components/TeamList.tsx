@@ -11,8 +11,20 @@ export const TeamList: React.FC = () => {
 
   useEffect(() => {
     const loadWorkers = async () => {
-      const { data } = await dataService.getWorkers();
-      if (data) setWorkers(data);
+      const [workersRes, ordersRes] = await Promise.all([
+        dataService.getWorkers(),
+        dataService.getOrders()
+      ]);
+      
+      if (workersRes.data && ordersRes.data) {
+        const enrichedWorkers = workersRes.data.map((w: any) => ({
+          ...w,
+          active_orders: ordersRes.data.filter((o: any) => 
+            o.assigned_worker_id === w.id && o.status !== 'done'
+          ).length
+        }));
+        setWorkers(enrichedWorkers);
+      }
       setLoading(false);
     };
     loadWorkers();

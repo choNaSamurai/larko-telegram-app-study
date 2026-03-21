@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, CheckCircle, Clock, Calendar, Layers } from 'lucide-react';
+import { dataService } from '../services/dataService';
 
 interface Break {
   id: string;
@@ -9,21 +10,28 @@ interface Break {
 }
 
 export const OrderDetails: React.FC = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [order, setOrder] = useState<any>(null);
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('17:00');
   const [breaks, setBreaks] = useState<Break[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
-  // Mock order data
-  const order = {
-    id: '1',
-    name: '#1024 Metal Brackets',
-    type: 'Welding',
-    qty: 50,
-    deadline: '2026-03-25',
-    status: 'In Progress'
-  };
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!id) return;
+      const { data } = await dataService.getOrders();
+      if (data) {
+        const found = data.find((o: any) => o.id === id);
+        setOrder(found);
+      }
+      setLoading(false);
+    };
+    fetchOrder();
+  }, [id]);
 
   const addBreak = () => {
     if (breaks.length < 5) {
@@ -49,31 +57,40 @@ export const OrderDetails: React.FC = () => {
     return Math.max(0, diff).toFixed(2);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    
+    const logData = {
+      order_id: id,
+      startTime,
+      endTime,
+      breaks,
+      netHours: calculateNetHours()
+    };
+
+    const { error } = await dataService.submitTimeLog(logData);
+    if (!error) {
+      setSubmitted(true);
+    } else {
+      console.error('Error submitting log:', error);
+      setSubmitting(false);
+    }
   };
 
-  if (submitted) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in zoom-in duration-700">
-        <div className="w-24 h-24 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center mb-8 relative border border-[var(--status-success)]">
-          <div className="absolute inset-0 border border-[var(--status-success)] rounded-full animate-ping opacity-20" />
-          <CheckCircle size={48} className="text-[var(--status-success)]" />
-        </div>
-        <h2 className="text-3xl font-black text-[var(--text-primary)] mb-3 tracking-tighter uppercase italic">GREAT WORK!</h2>
-        <p className="text-[var(--text-secondary)] font-medium mb-10 max-w-[280px] uppercase tracking-widest text-[10px] leading-loose">
-          Your hours have been recorded for industrial review. Payouts will update shortly.
-        </p>
-        <button 
-          onClick={() => navigate('/worker')}
-          className="btn-premium w-full max-w-[240px] !h-14 uppercase tracking-[0.2em] font-black"
-        >
-          Return to Deck
-        </button>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center p-20 gap-4">
+      <div className="w-10 h-10 border-4 border-[var(--bg-tertiary)] border-t-[var(--accent-primary)] rounded-full animate-spin"></div>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Fetching Order...</span>
+    </div>
+  );
+
+  if (!order) return (
+    <div className="text-center py-20 px-4">
+      <h3 className="text-xl font-black text-[var(--text-primary)]">ORDER NOT FOUND</h3>
+      <button onClick={() => navigate('/worker')} className="mt-4 text-[var(--accent-primary)] font-black text-xs uppercase tracking-widest">Return to Deck</button>
+    </div>
+  );
 
   return (
     <div className="space-y-8 text-left pb-32 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -91,8 +108,14 @@ export const OrderDetails: React.FC = () => {
         
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase line-clamp-2 leading-none">{order.name}</h2>
-          <div className="px-3 py-1 bg-[var(--status-warning)] text-[var(--bg-primary)] text-[10px] font-black uppercase tracking-widest rounded-md">
-            {order.status}
+          <div className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md ${
+            order.status?.toLowerCase() === 'new' 
+            ? 'bg-[var(--status-info)] text-[var(--bg-primary)]' 
+            : order.status?.toLowerCase() === 'done'
+            ? 'bg-[var(--status-success)] text-[var(--bg-primary)]'
+            : 'bg-[var(--status-warning)] text-[var(--bg-primary)]'
+          }`}>
+            {order.status?.replace('_', ' ')}
           </div>
         </div>
         
@@ -102,7 +125,7 @@ export const OrderDetails: React.FC = () => {
             <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">{order.type}</span>
           </div>
           <div className="flex items-center gap-2 bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-xl border border-[var(--border-default)]">
-            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest font-mono-numbers">{order.qty}</span>
+            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest font-mono-numbers">{order.quantity}</span>
             <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">UNIT</span>
           </div>
           <div className="flex items-center gap-2 bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-xl border border-[var(--border-default)]">
@@ -112,111 +135,182 @@ export const OrderDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Time Log Form */}
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <section>
-          <div className="flex items-center gap-2 mb-4 px-2">
-            <Clock size={18} className="text-[var(--accent-primary)]" />
-            <h3 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Work Interval</h3>
-          </div>
-          
-          <div className="premium-card bg-[var(--bg-secondary)] border-none !p-8 space-y-8">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">START</label>
-                <input 
-                  type="time" 
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-mono-numbers text-lg font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">END</label>
-                <input 
-                  type="time" 
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-mono-numbers text-lg font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Breaks Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">
-                  BREAKS <span className="text-[var(--accent-primary)] font-mono-numbers">({breaks.length}/5)</span>
-                </label>
-                <button 
-                  type="button" 
-                  onClick={addBreak}
-                  disabled={breaks.length >= 5}
-                  className="h-8 px-4 bg-[var(--accent-primary)] text-[var(--bg-primary)] text-[10px] font-black rounded-lg uppercase tracking-widest active:scale-95 transition-all disabled:opacity-20 flex items-center gap-1.5"
-                >
-                  <Plus size={14} strokeWidth={3} /> ADD
-                </button>
-              </div>
-              
-              <div className="space-y-2">
-                {breaks.map((b, index) => (
-                  <div key={b.id} className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-300">
-                    <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-[var(--bg-tertiary)] rounded-xl px-4 h-12 border border-[var(--border-default)]">
+      {order.status !== 'done' && (
+        <>
+          {order.payment_model === 'per_hour' ? (
+            /* Time Log Form */
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <section>
+                <div className="flex items-center gap-2 mb-4 px-2">
+                  <Clock size={18} className="text-[var(--accent-primary)]" />
+                  <h3 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Work Interval</h3>
+                </div>
+                
+                <div className="premium-card bg-[var(--bg-secondary)] border-none !p-8 space-y-8">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">START</label>
                       <input 
                         type="time" 
-                        value={b.start}
-                        onChange={(e) => {
-                          const newBreaks = [...breaks];
-                          newBreaks[index].start = e.target.value;
-                          setBreaks(newBreaks);
-                        }}
-                        className="bg-transparent border-none text-[10px] font-black font-mono-numbers text-[var(--text-primary)] text-center outline-none"
-                      />
-                      <div className="w-1 h-1 bg-[var(--border-default)] rounded-full" />
-                      <input 
-                        type="time" 
-                        value={b.end}
-                        onChange={(e) => {
-                          const newBreaks = [...breaks];
-                          newBreaks[index].end = e.target.value;
-                          setBreaks(newBreaks);
-                        }}
-                        className="bg-transparent border-none text-[10px] font-black font-mono-numbers text-[var(--text-primary)] text-center outline-none"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-mono-numbers text-lg font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none"
                       />
                     </div>
-                    <button 
-                      type="button" 
-                      onClick={() => removeBreak(b.id)}
-                      className="w-12 h-12 bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-[var(--status-error)] rounded-xl flex items-center justify-center active:scale-90 transition-all hover:bg-[var(--status-error)] hover:text-[var(--bg-primary)]"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">END</label>
+                      <input 
+                        type="time" 
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-mono-numbers text-lg font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none"
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Industrial Summary */}
-            <div className="bg-[var(--bg-tertiary)] border border-[var(--border-default)] p-8 rounded-[2rem] flex items-center justify-between relative overflow-hidden group">
-              <div className="absolute inset-0 bg-[var(--accent-primary)] opacity-0 group-hover:opacity-[0.02] transition-opacity" />
-              <div className="flex flex-col relative z-10">
-                <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] mb-2">Total Net Duration</span>
-                <div className="text-4xl font-black font-mono-numbers text-[var(--accent-primary)]">
-                  {calculateNetHours()} <span className="text-xs uppercase text-[var(--text-secondary)] font-sans tracking-widest">Hrs</span>
+                  {/* Breaks Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">
+                        BREAKS <span className="text-[var(--accent-primary)] font-mono-numbers">({breaks.length}/5)</span>
+                      </label>
+                      <button 
+                        type="button" 
+                        onClick={addBreak}
+                        disabled={breaks.length >= 5}
+                        className="h-8 px-4 bg-[var(--accent-primary)] text-[var(--bg-primary)] text-[10px] font-black rounded-lg uppercase tracking-widest active:scale-95 transition-all disabled:opacity-20 flex items-center gap-1.5"
+                      >
+                        <Plus size={14} strokeWidth={3} /> ADD
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {breaks.map((b, index) => (
+                        <div key={b.id} className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-300">
+                          <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-[var(--bg-tertiary)] rounded-xl px-4 h-12 border border-[var(--border-default)]">
+                            <input 
+                              type="time" 
+                              value={b.start}
+                              onChange={(e) => {
+                                const newBreaks = [...breaks];
+                                newBreaks[index].start = e.target.value;
+                                setBreaks(newBreaks);
+                              }}
+                              className="bg-transparent border-none text-[10px] font-black font-mono-numbers text-[var(--text-primary)] text-center outline-none"
+                            />
+                            <div className="w-1 h-1 bg-[var(--border-default)] rounded-full" />
+                            <input 
+                              type="time" 
+                              value={b.end}
+                              onChange={(e) => {
+                                const newBreaks = [...breaks];
+                                newBreaks[index].end = e.target.value;
+                                setBreaks(newBreaks);
+                              }}
+                              className="bg-transparent border-none text-[10px] font-black font-mono-numbers text-[var(--text-primary)] text-center outline-none"
+                            />
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => removeBreak(b.id)}
+                            className="w-12 h-12 bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-[var(--status-error)] rounded-xl flex items-center justify-center active:scale-90 transition-all hover:bg-[var(--status-error)] hover:text-[var(--bg-primary)]"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="bg-[var(--bg-tertiary)] border border-[var(--border-default)] p-8 rounded-[2rem] flex items-center justify-between relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-[var(--accent-primary)] opacity-0 group-hover:opacity-[0.02] transition-opacity" />
+                    <div className="flex flex-col relative z-10">
+                      <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] mb-2">Total Net Duration</span>
+                      <div className="text-4xl font-black font-mono-numbers text-[var(--accent-primary)]">
+                        {calculateNetHours()} <span className="text-xs uppercase text-[var(--text-secondary)] font-sans tracking-widest">Hrs</span>
+                      </div>
+                    </div>
+                    <Clock size={40} className="text-[var(--accent-primary)] opacity-20 relative z-10" />
+                  </div>
                 </div>
-              </div>
-              <Clock size={40} className="text-[var(--accent-primary)] opacity-20 relative z-10" />
-            </div>
-          </div>
-        </section>
+              </section>
 
-        <button 
-          type="submit"
-          className="btn-premium w-full !h-16 text-lg uppercase tracking-[0.2em] font-black shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none transition-shadow"
-        >
-          Push Records
-        </button>
-      </form>
+              <button 
+                type="submit"
+                disabled={submitting}
+                className="btn-premium w-full !h-16 text-lg uppercase tracking-[0.2em] font-black shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none transition-shadow"
+              >
+                {submitting ? (
+                  <div className="w-6 h-6 border-4 border-[var(--bg-primary)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                ) : (
+                  'Push Records'
+                )}
+              </button>
+            </form>
+          ) : (
+            /* Mark as Done for per_unit */
+            <div className="space-y-6">
+              <div className="premium-card bg-[var(--bg-secondary)] border-none !p-10 text-center space-y-4">
+                <div className="w-20 h-20 bg-[var(--bg-tertiary)] rounded-full flex items-center justify-center mx-auto text-[var(--status-success)] border border-[var(--border-default)]">
+                  <CheckCircle size={40} />
+                </div>
+                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase italic">Complete Task</h3>
+                <p className="text-[10px] text-[var(--text-secondary)] font-bold uppercase tracking-widest leading-loose">
+                  Ensure all {order.quantity} units are produced and verified before closing this assignment.
+                </p>
+              </div>
+              <button 
+                onClick={async () => {
+                  setSubmitting(true);
+                  await dataService.updateOrderStatus(order.id, 'done');
+                  setSubmitted(true);
+                  setSubmitting(false);
+                }}
+                disabled={submitting}
+                className="btn-premium w-full !h-16 text-lg uppercase tracking-[0.2em] font-black shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none"
+              >
+                {submitting ? 'Verifying...' : 'Finalize Production'}
+              </button>
+            </div>
+          )}
+          
+          {/* Option to mark even hourly tasks as done after some logs */}
+          {order.payment_model === 'per_hour' && (
+             <button 
+                onClick={async () => {
+                  setSubmitting(true);
+                  await dataService.updateOrderStatus(order.id, 'done');
+                  setSubmitted(true);
+                  setSubmitting(false);
+                }}
+                disabled={submitting}
+                className="w-full h-12 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors mt-4"
+              >
+                Mark Order as Completed
+              </button>
+          )}
+        </>
+      )}
+
+      {submitted && (
+        <div className="fixed inset-0 z-50 bg-[var(--bg-primary)] flex flex-col items-center justify-center py-24 text-center animate-in fade-in zoom-in duration-500">
+          <div className="w-24 h-24 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center mb-8 relative border border-[var(--status-success)]">
+            <div className="absolute inset-0 border border-[var(--status-success)] rounded-full animate-ping opacity-20" />
+            <CheckCircle size={48} className="text-[var(--status-success)]" />
+          </div>
+          <h2 className="text-3xl font-black text-[var(--text-primary)] mb-3 tracking-tighter uppercase italic">GREAT WORK!</h2>
+          <p className="text-[var(--text-secondary)] font-medium mb-10 max-w-[280px] uppercase tracking-widest text-[10px] leading-loose">
+            Your hours have been recorded for industrial review. Payouts will update shortly.
+          </p>
+          <button 
+            onClick={() => navigate('/worker')}
+            className="btn-premium w-full max-w-[240px] !h-14 uppercase tracking-[0.2em] font-black"
+          >
+            Return to Deck
+          </button>
+        </div>
+      )}
     </div>
   );
 };

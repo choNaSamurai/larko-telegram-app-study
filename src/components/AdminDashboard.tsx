@@ -1,17 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Users, PieChart, Settings, Plus, AlertCircle } from 'lucide-react';
+import { dataService } from '../services/dataService';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [counts, setCounts] = useState({ orders: 0, workers: 0 });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const [orders, workers] = await Promise.all([
+        dataService.getOrders(),
+        dataService.getWorkers()
+      ]);
+      setCounts({
+        orders: orders.data?.length || 0,
+        workers: workers.data?.length || 0
+      });
+    };
+    fetchCounts();
+  }, []);
 
   const menuItems = [
-    { label: 'Orders', icon: ShoppingBag, path: '/admin/orders', count: 12, color: 'var(--accent-primary)' },
-    { label: 'Team', icon: Users, path: '/admin/workers', count: 8, color: 'var(--status-info)' },
+    { label: 'Orders', icon: ShoppingBag, path: '/admin/orders', count: counts.orders, color: 'var(--accent-primary)' },
+    { label: 'Team', icon: Users, path: '/admin/workers', count: counts.workers, color: 'var(--status-info)' },
     { label: 'Finance', icon: PieChart, path: '/admin/finance', count: null, color: 'var(--status-success)' },
-    { label: 'Clients', icon: Users, path: '/admin/clients', count: 15, color: 'var(--text-primary)' },
+    { label: 'Clients', icon: Users, path: '/admin/clients', count: 0, color: 'var(--text-primary)' },
     { label: 'Rules', icon: Settings, path: '/admin/settings', count: null, color: 'var(--text-secondary)' },
-    { label: 'Disputes', icon: AlertCircle, path: '/admin/disputes', count: 3, color: 'var(--status-error)' },
+    { label: 'Disputes', icon: AlertCircle, path: '/admin/disputes', count: 0, color: 'var(--status-error)' },
   ];
 
   return (

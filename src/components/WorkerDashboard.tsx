@@ -46,11 +46,13 @@ export const WorkerDashboard: React.FC = () => {
           >
             {/* Semantic Status Accent */}
             <div className={`absolute top-0 right-0 px-4 py-1 text-[10px] font-black uppercase tracking-[0.15em] rounded-bl-xl ${
-              order.status === 'New' 
+              order.status?.toLowerCase() === 'new' 
               ? 'bg-[var(--status-info)] text-[var(--bg-primary)]' 
+              : order.status?.toLowerCase() === 'done'
+              ? 'bg-[var(--status-success)] text-[var(--bg-primary)]'
               : 'bg-[var(--status-warning)] text-[var(--bg-primary)]'
             }`}>
-              {order.status}
+              {order.status?.replace('_', ' ')}
             </div>
 
             <div className="mb-6">
@@ -70,7 +72,7 @@ export const WorkerDashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 border-t border-[var(--border-default)] pt-6">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase font-black text-[var(--text-secondary)] tracking-widest">Quantity</span>
-                <span className="font-mono-numbers text-xl font-black text-[var(--text-primary)]">{order.qty} <span className="text-[10px] opacity-40">UNIT</span></span>
+                <span className="font-mono-numbers text-xl font-black text-[var(--text-primary)]">{order.quantity} <span className="text-[10px] opacity-40">UNIT</span></span>
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <span className="text-[10px] uppercase font-black text-[var(--text-secondary)] tracking-widest">Due Date</span>
