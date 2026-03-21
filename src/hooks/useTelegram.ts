@@ -18,21 +18,22 @@ export const useTelegram = () => {
       // Initialize SDK
       init();
 
-      // Check if we are inside Telegram
-      if (miniApp.isMounted()) {
-        miniApp.ready();
-        viewport.mount();
-        viewport.expand();
-        
-        const data = initData.user();
-        if (data) {
-          setUser(data);
-        }
-        setIsReady(true);
+      // Check and mount components if available
+      if (miniApp.mount.isAvailable()) miniApp.mount();
+      if (viewport.mount.isAvailable()) viewport.mount();
+      
+      // Standard TMA initialization
+      miniApp.ready();
+      viewport.expand();
+      
+      const data = initData.user();
+      if (data) {
+        setUser(data);
       }
+      // Always set ready, even if not in Telegram (for dev)
+      setIsReady(true);
     } catch (error) {
       console.error('Failed to initialize Telegram SDK:', error);
-      // Fallback for development if needed
       setIsReady(true);
     }
   }, []);
