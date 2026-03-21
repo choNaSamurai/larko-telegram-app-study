@@ -66,15 +66,35 @@ export const Settings: React.FC = () => {
 
       <div className="premium-card !bg-slate-900 border-none relative overflow-hidden p-8">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)] opacity-10 rounded-full blur-3xl -mr-16 -mt-16" />
-        <div className="flex items-start gap-4 relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <ShieldCheck size={20} className="text-[var(--primary)]" />
+        <div className="flex flex-col gap-6 relative z-10">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <ShieldCheck size={20} className="text-[var(--primary)]" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white uppercase tracking-widest mb-2">Rate Integrity</h4>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                New rates only apply to future orders. Existing active orders will maintain the rates they were created with to ensure financial consistency.
+              </p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-sm font-black text-white uppercase tracking-widest mb-2">Rate Integrity</h4>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">
-              New rates only apply to future orders. Existing active orders will maintain the rates they were created with to ensure financial consistency.
-            </p>
+          
+          <div className="pt-6 border-t border-white/10">
+            <h4 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.3em] mb-4">Developer Tools</h4>
+            <button 
+              onClick={() => {
+                const current = dataService.getSelectedRole();
+                dataService.switchRole(current === 'admin' ? 'worker' : 'admin');
+              }}
+              className="w-full h-14 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                <ShieldCheck size={16} strokeWidth={3} />
+              </div>
+              <span className="text-xs font-black text-white uppercase tracking-widest">
+                Switch to {dataService.getSelectedRole() === 'admin' ? 'WORKER' : 'ADMIN'} Mode
+              </span>
+            </button>
           </div>
         </div>
       </div>

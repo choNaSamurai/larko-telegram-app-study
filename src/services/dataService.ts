@@ -56,43 +56,14 @@ const STORAGE_KEYS = {
   ORDERS: 'wt_orders',
   TIME_LOGS: 'wt_time_logs',
   ADVANCES: 'wt_advances',
-  PRODUCT_TYPES: 'wt_product_types'
+  PRODUCT_TYPES: 'wt_product_types',
+  SELECTED_ROLE: 'wt_selected_role'
 };
 
 // Default Initial Data
-const DEFAULT_PROFILES: Profile[] = [
-  { id: 'u1', telegram_id: 12345678, full_name: 'Admin User', role: 'admin', hourly_rate: 200 },
-  { id: 'u2', telegram_id: 87654321, full_name: 'Worker Ivan', role: 'worker', hourly_rate: 150 },
-];
+const DEFAULT_PROFILES: Profile[] = [];
 
-const DEFAULT_ORDERS: Order[] = [
-  { 
-    id: '1', 
-    order_number: '#1024', 
-    name: '#1024 Metal Brackets', 
-    product_type_id: '1', 
-    quantity: 50, 
-    deadline: '2026-03-25', 
-    assigned_worker_id: 'u2', 
-    status: 'in_progress', 
-    created_at: new Date().toISOString(),
-    payment_model: 'per_unit',
-    unit_rate: 150
-  },
-  { 
-    id: '2', 
-    order_number: '#1025', 
-    name: '#1025 Door Handles', 
-    product_type_id: '2', 
-    quantity: 200, 
-    deadline: '2026-03-22', 
-    assigned_worker_id: 'u2', 
-    status: 'new', 
-    created_at: new Date().toISOString(),
-    payment_model: 'per_unit',
-    unit_rate: 200
-  },
-];
+const DEFAULT_ORDERS: Order[] = [];
 
 const DEFAULT_PRODUCT_TYPES: ProductType[] = [
   { id: '1', name: 'Welding', unit_rate: 150 },
@@ -121,11 +92,33 @@ export const dataService = {
   getUserRole: async (telegramId: number) => {
     await delay(300);
     if (IS_DEV || !supabase) {
-      const profiles = getStorage<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
-      const user = profiles.find(p => p.telegram_id === telegramId);
-      return { data: user || { role: 'admin', id: 'u1', full_name: 'Admin', telegram_id: telegramId } as Profile, error: null };
+      let profiles = getStorage<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
+      let userProfiles = profiles.filter(p => p.telegram_id === telegramId);
+      
+      // Auto-register both roles if new user
+      if (userProfiles.length === 0) {
+        const adminProfile: Profile = { id: `a_${telegramId}`, telegram_id: telegramId, full_name: 'Admin', role: 'admin', hourly_rate: 200 };
+        const workerProfile: Profile = { id: `w_${telegramId}`, telegram_id: telegramId, full_name: 'Worker', role: 'worker', hourly_rate: 150 };
+        profiles = [...profiles, adminProfile, workerProfile];
+        saveStorage(STORAGE_KEYS.PROFILES, profiles);
+        userProfiles = [adminProfile, workerProfile];
+      }
+
+      const selectedRole = localStorage.getItem(STORAGE_KEYS.SELECTED_ROLE) || 'admin';
+      const currentUser = userProfiles.find(p => p.role === selectedRole) || userProfiles[0];
+      
+      return { data: currentUser, error: null };
     }
     return await supabase.from('profiles').select('role, id').eq('telegram_id', telegramId).single();
+  },
+
+  switchRole: (role: 'admin' | 'worker') => {
+    localStorage.setItem(STORAGE_KEYS.SELECTED_ROLE, role);
+    window.location.reload(); // Force reload to re-initialize app with new role
+  },
+
+  getSelectedRole: () => {
+    return localStorage.getItem(STORAGE_KEYS.SELECTED_ROLE) || 'admin';
   },
 
   getOrders: async () => {
