@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 
-const IS_DEV = import.meta.env.DEV || !import.meta.env.VITE_SUPABASE_URL;
+const IS_DEV = 
+  import.meta.env.DEV || 
+  import.meta.env.VITE_USE_MOCKS === 'true' || 
+  !import.meta.env.VITE_SUPABASE_URL;
 
 // Mock Data
 const MOCK_PROFILES = [
