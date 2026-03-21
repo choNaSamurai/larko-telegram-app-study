@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { dataService } from '../services/dataService';
-import { PieChart, TrendingUp, Wallet, ArrowDownCircle } from 'lucide-react';
+import { PieChart, TrendingUp, Wallet, ArrowDownCircle, Users } from 'lucide-react';
 
 export const FinanceDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -15,70 +15,90 @@ export const FinanceDashboard: React.FC = () => {
     loadStats();
   }, []);
 
-  if (loading) return <div className="p-8 text-center text-slate-400">Loading finance stats...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center p-20 gap-4">
+      <div className="w-10 h-10 border-4 border-[var(--bg-tertiary)] border-t-[var(--accent-primary)] rounded-full animate-spin"></div>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Analyzing Records...</span>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-slate-800">Finance Dashboard</h2>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="px-2">
+        <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">FINANCE</h2>
+        <p className="text-[var(--text-secondary)] font-medium mt-1 uppercase tracking-widest text-[10px]">Company performance</p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 text-left">
-        {/* Main Stats Card */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+      <div className="space-y-6 text-left">
+        {/* Main Stats Card - Deep Obsidian */}
+        <div className="premium-card !p-8 bg-[var(--bg-secondary)] border-[var(--border-default)] !rounded-[2rem] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--status-success)] opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+          
+          <div className="flex items-center gap-3 mb-10">
+            <div className="p-2 bg-[var(--bg-tertiary)] rounded-xl text-[var(--accent-primary)] border border-[var(--border-default)]">
               <PieChart size={20} />
             </div>
-            <span className="font-bold text-slate-800">Overview</span>
+            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">P&L Overview</span>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex justify-between items-end border-b border-slate-50 pb-4">
+          <div className="space-y-8">
+            <div className="flex justify-between items-end border-b border-[var(--border-default)] pb-6 group">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Total Earned (Wages)</span>
-                <div className="text-2xl font-black text-slate-800">{stats?.total_earned?.toLocaleString()} UAH</div>
+                <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] block mb-2">Total Wages</span>
+                <div className="text-3xl font-black font-mono-numbers text-[var(--text-primary)] group-hover:text-[var(--status-success)] transition-colors">
+                  {stats?.total_earned?.toLocaleString()} <span className="text-sm opacity-40">UAH</span>
+                </div>
               </div>
-              <TrendingUp size={24} className="text-green-500 mb-1" />
+              <TrendingUp size={24} className="text-[var(--status-success)] mb-1" />
             </div>
 
-            <div className="flex justify-between items-end border-b border-slate-50 pb-4">
+            <div className="flex justify-between items-end border-b border-[var(--border-default)] pb-6 group">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Total Advances Issued</span>
-                <div className="text-2xl font-black text-slate-800">{stats?.total_advances?.toLocaleString()} UAH</div>
+                <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] block mb-2">Total Advances</span>
+                <div className="text-3xl font-black font-mono-numbers text-[var(--text-primary)] group-hover:text-[var(--status-info)] transition-colors">
+                  {stats?.total_advances?.toLocaleString()} <span className="text-sm opacity-40">UAH</span>
+                </div>
               </div>
-              <ArrowDownCircle size={24} className="text-blue-500 mb-1" />
+              <ArrowDownCircle size={24} className="text-[var(--status-info)] mb-1" />
             </div>
 
-            <div className="flex justify-between items-end">
+            <div className="flex justify-between items-end group">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Remaining Payable</span>
-                <div className="text-2xl font-black text-indigo-600">{stats?.total_remaining?.toLocaleString()} UAH</div>
+                <span className="text-[10px] font-black text-[var(--accent-primary)] uppercase tracking-[0.2em] block mb-2">Net Payable</span>
+                <div className="text-4xl font-black font-mono-numbers text-[var(--accent-primary)]">
+                  {stats?.total_remaining?.toLocaleString()} <span className="text-sm opacity-40 text-[var(--text-primary)]">UAH</span>
+                </div>
               </div>
-              <Wallet size={24} className="text-indigo-400 mb-1" />
+              <Wallet size={32} className="text-[var(--accent-primary)] opacity-20 mb-1" />
             </div>
           </div>
         </div>
 
-        {/* Per-Worker Breakdown Label */}
-        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-tight ml-1">Team Summary</h3>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <table className="w-full text-xs">
-            <thead className="bg-slate-50 text-slate-400 font-bold uppercase">
+        {/* Team Breakdown Header */}
+        <div className="flex items-center gap-2 px-2 pt-4">
+          <Users size={16} className="text-[var(--text-secondary)]" />
+          <h3 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Team Summary</h3>
+        </div>
+
+        <div className="bg-[var(--bg-secondary)] rounded-[1.5rem] border border-[var(--border-default)] overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-[var(--bg-tertiary)] border-b border-[var(--border-default)]">
               <tr>
-                <th className="px-4 py-3 text-left">Worker</th>
-                <th className="px-4 py-3 text-right">Earned</th>
-                <th className="px-4 py-3 text-right">Payable</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">Worker</th>
+                <th className="px-6 py-4 text-right text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">Earned</th>
+                <th className="px-6 py-4 text-right text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">Payable</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              <tr>
-                <td className="px-4 py-4 font-bold text-slate-700">Ivan S.</td>
-                <td className="px-4 py-4 text-right text-slate-500">12,400</td>
-                <td className="px-4 py-4 text-right font-bold text-indigo-600">4,200</td>
+            <tbody className="divide-y divide-[var(--border-default)]">
+              <tr className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+                <td className="px-6 py-5 font-black text-[var(--text-primary)]">Ivan S.</td>
+                <td className="px-6 py-5 text-right font-mono-numbers text-[var(--text-secondary)]">12,400</td>
+                <td className="px-6 py-5 text-right font-mono-numbers font-black text-[var(--accent-primary)]">4,200</td>
               </tr>
-              <tr>
-                <td className="px-4 py-4 font-bold text-slate-700">Petro K.</td>
-                <td className="px-4 py-4 text-right text-slate-500 ...">15,600</td>
-                <td className="px-4 py-4 text-right font-bold text-indigo-600">6,100</td>
+              <tr className="hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+                <td className="px-6 py-5 font-black text-[var(--text-primary)]">Petro K.</td>
+                <td className="px-6 py-5 text-right font-mono-numbers text-[var(--text-secondary)]">15,600</td>
+                <td className="px-6 py-5 text-right font-mono-numbers font-black text-[var(--accent-primary)]">6,100</td>
               </tr>
             </tbody>
           </table>

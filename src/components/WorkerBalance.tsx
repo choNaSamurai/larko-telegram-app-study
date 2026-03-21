@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTelegram } from '../hooks/useTelegram';
 import { dataService } from '../services/dataService';
-import { Wallet, TrendingUp, ArrowDownCircle } from 'lucide-react';
+import { Wallet, TrendingUp, ArrowDownCircle, Shovel as Shield } from 'lucide-react';
 
 export const WorkerBalance: React.FC = () => {
   const { user } = useTelegram();
@@ -14,7 +14,6 @@ export const WorkerBalance: React.FC = () => {
         const { data } = await dataService.getBalance(user.id);
         setBalance(data);
       } else {
-        // Dev fallback
         const { data } = await dataService.getBalance(0);
         setBalance(data);
       }
@@ -23,53 +22,82 @@ export const WorkerBalance: React.FC = () => {
     loadBalance();
   }, [user]);
 
-  if (loading) return <div className="p-8 text-center text-slate-400">Loading balance...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center p-20 gap-4">
+      <div className="w-10 h-10 border-4 border-[var(--bg-tertiary)] border-t-[var(--accent-primary)] rounded-full animate-spin"></div>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Crunching numbers...</span>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-slate-800">My Balance</h2>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="px-2">
+        <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">WALLET</h2>
+        <p className="text-[var(--text-secondary)] font-medium mt-1 uppercase tracking-widest text-[10px]">Earnings & Payouts</p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {/* Total Remaining Card */}
-        <div className="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg shadow-indigo-100 relative overflow-hidden">
+      <div className="space-y-4">
+        {/* Main Balance Card - Deep Obsidian */}
+        <div className="premium-card !p-8 bg-[var(--bg-secondary)] border-[var(--border-default)] !rounded-[2rem] relative overflow-hidden active:scale-[0.98] transition-all">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--accent-primary)] opacity-5 rounded-full blur-3xl -mr-16 -mt-16" />
+          
           <div className="relative z-10">
-            <span className="text-sm font-medium opacity-80">Remaining Balance</span>
-            <div className="text-4xl font-black mt-1">
-              {balance?.remaining?.toLocaleString()} UAH
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-6 h-6 rounded-md bg-[var(--accent-primary)] flex items-center justify-center text-[var(--bg-primary)]">
+                <Wallet size={14} strokeWidth={3} />
+              </div>
+              <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Net Remaining</span>
+            </div>
+            
+            <div className="flex items-baseline gap-2">
+              <div className="text-5xl font-black font-mono-numbers text-[var(--accent-primary)]">
+                {balance?.remaining?.toLocaleString()}
+              </div>
+              <span className="text-sm font-black text-[var(--text-secondary)] uppercase">UAH</span>
             </div>
           </div>
-          <Wallet className="absolute right-[-10px] bottom-[-10px] text-white/10" size={120} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Earned Card */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-            <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600 mb-3">
-              <TrendingUp size={24} />
+          {/* Earned Summary */}
+          <div className="premium-card bg-[var(--bg-secondary)] border-none p-5 active:scale-95">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-[var(--bg-tertiary)] rounded-xl flex items-center justify-center text-[var(--status-success)] border border-[var(--border-default)]">
+                <TrendingUp size={20} />
+              </div>
+              <div className="h-1.5 w-1.5 rounded-full bg-[var(--status-success)] animate-pulse" />
             </div>
-            <span className="text-xs font-bold text-slate-400 uppercase">Total Earned</span>
-            <div className="text-xl font-bold text-slate-800 mt-1">
+            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-1">Total Earned</span>
+            <div className="text-xl font-black font-mono-numbers text-[var(--text-primary)]">
               {balance?.earned?.toLocaleString()}
             </div>
           </div>
 
-          {/* Advances Card */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-3">
-              <ArrowDownCircle size={24} />
+          {/* Advances Summary */}
+          <div className="premium-card bg-[var(--bg-secondary)] border-none p-5 active:scale-95">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-[var(--bg-tertiary)] rounded-xl flex items-center justify-center text-[var(--status-info)] border border-[var(--border-default)]">
+                <ArrowDownCircle size={20} />
+              </div>
+              <div className="h-1.5 w-1.5 rounded-full bg-[var(--status-info)]" />
             </div>
-            <span className="text-xs font-bold text-slate-400 uppercase">Advances</span>
-            <div className="text-xl font-bold text-slate-800 mt-1">
+            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest block mb-1">Advances</span>
+            <div className="text-xl font-black font-mono-numbers text-[var(--text-primary)]">
               {balance?.advances?.toLocaleString()}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl">
-        <p className="text-xs text-amber-700 font-medium leading-relaxed">
-          💡 Your balance is updated automatically as orders are completed and advances are issued. Contact the admin for physical payout.
-        </p>
+      {/* Industrial Info Banner */}
+      <div className="bg-[var(--bg-secondary)] border-l-2 border-[var(--status-warning)] p-6 rounded-r-2xl flex items-start gap-4">
+        <Shield size={20} className="text-[var(--status-warning)] shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <h4 className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">Integrity Notice</h4>
+          <p className="text-[10px] text-[var(--text-secondary)] font-bold leading-relaxed uppercase tracking-wider">
+            Balance updates on task completion. Physical payouts require admin verification at larko HQ.
+          </p>
+        </div>
       </div>
     </div>
   );
