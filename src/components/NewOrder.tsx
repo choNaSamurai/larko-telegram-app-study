@@ -11,7 +11,7 @@ export const NewOrder: React.FC = () => {
   const { impact, notification } = useHaptic();
   const { tg } = useTelegram();
   const queryClient = useQueryClient();
-  
+
   const { data: productTypes = [] } = useQuery({
     queryKey: ['productTypes'],
     queryFn: () => dataService.getProductTypes().then(res => res.data || [])
@@ -36,7 +36,7 @@ export const NewOrder: React.FC = () => {
   });
 
   const loading = createOrderMutation.isPending;
-  
+
   const [formData, setFormData] = useState({
     orderNumber: '',
     productType: '',
@@ -76,8 +76,8 @@ export const NewOrder: React.FC = () => {
 
   return (
     <div className="space-y-8 text-left pb-32 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <button 
-        onClick={() => navigate('/admin')} 
+      <button
+        onClick={() => navigate('/admin')}
         className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors p-2 -ml-2 group"
       >
         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
@@ -95,11 +95,11 @@ export const NewOrder: React.FC = () => {
             <label className="flex items-center gap-2 text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest ml-1">
               <Hash size={12} strokeWidth={3} /> ORDER IDENTITY <span className="opacity-30">(#HEX)</span>
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="e.g. #1024"
               value={formData.orderNumber}
-              onChange={(e) => setFormData({...formData, orderNumber: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
               className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none uppercase tracking-widest"
             />
           </div>
@@ -110,10 +110,10 @@ export const NewOrder: React.FC = () => {
                 <ShoppingBag size={12} strokeWidth={3} /> TASK TYPE
               </label>
               <div className="relative">
-                <select 
+                <select
                   required
                   value={formData.productType}
-                  onChange={(e) => setFormData({...formData, productType: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, productType: e.target.value })}
                   className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none appearance-none cursor-pointer uppercase tracking-widest"
                 >
                   <option value="" className="bg-[var(--bg-secondary)]">SELECT...</option>
@@ -124,12 +124,12 @@ export const NewOrder: React.FC = () => {
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest ml-1">QUANTITY</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 min="1"
                 required
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})}
+                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
                 className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-mono-numbers text-lg font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none"
               />
             </div>
@@ -140,10 +140,10 @@ export const NewOrder: React.FC = () => {
               <Users size={12} strokeWidth={3} /> STATION SPECIALIST
             </label>
             <div className="relative">
-              <select 
+              <select
                 required
                 value={formData.workerId}
-                onChange={(e) => setFormData({...formData, workerId: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, workerId: e.target.value })}
                 className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none appearance-none cursor-pointer uppercase tracking-widest"
               >
                 <option value="" className="bg-[var(--bg-secondary)]">SELECT SPECIALIST...</option>
@@ -157,11 +157,11 @@ export const NewOrder: React.FC = () => {
             <label className="flex items-center gap-2 text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest ml-1">
               <Calendar size={12} strokeWidth={3} /> DEADLINE TARGET
             </label>
-            <input 
-              type="date" 
+            <input
+              type="date"
               required
               value={formData.deadline}
-              onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
               className="w-full h-14 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-2xl p-4 font-mono-numbers text-lg font-black text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] transition-all outline-none"
             />
           </div>
@@ -171,31 +171,29 @@ export const NewOrder: React.FC = () => {
               <CreditCard size={12} strokeWidth={3} /> PAYMENT MODEL
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   impact('light');
-                  setFormData({...formData, paymentModel: 'per_unit'});
+                  setFormData({ ...formData, paymentModel: 'per_unit' });
                 }}
-                className={`h-14 rounded-2xl border-2 font-black text-[10px] tracking-[0.2em] transition-all uppercase ${
-                  formData.paymentModel === 'per_unit' 
-                  ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--bg-primary)]' 
-                  : 'border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
-                }`}
+                className={`h-14 rounded-2xl border-2 font-black text-[10px] tracking-[0.2em] transition-all uppercase ${formData.paymentModel === 'per_unit'
+                    ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--bg-primary)]'
+                    : 'border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+                  }`}
               >
                 PER UNIT
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   impact('light');
-                  setFormData({...formData, paymentModel: 'per_hour'});
+                  setFormData({ ...formData, paymentModel: 'per_hour' });
                 }}
-                className={`h-14 rounded-2xl border-2 font-black text-[10px] tracking-[0.2em] transition-all uppercase ${
-                  formData.paymentModel === 'per_hour' 
-                  ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--bg-primary)]' 
-                  : 'border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
-                }`}
+                className={`h-14 rounded-2xl border-2 font-black text-[10px] tracking-[0.2em] transition-all uppercase ${formData.paymentModel === 'per_hour'
+                    ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--bg-primary)]'
+                    : 'border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+                  }`}
               >
                 PER HOUR
               </button>

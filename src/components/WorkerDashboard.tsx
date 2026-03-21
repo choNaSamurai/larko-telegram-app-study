@@ -36,8 +36,8 @@ export const WorkerDashboard: React.FC = () => {
 
       <div className="space-y-4">
         {orders.map((order: any) => (
-          <div 
-            key={order.id} 
+          <div
+            key={order.id}
             onClick={() => {
               impact('light');
               navigate(`/worker/orders/${order.id}`);
@@ -45,13 +45,12 @@ export const WorkerDashboard: React.FC = () => {
             className="premium-card group relative active:scale-[0.98] transition-all cursor-pointer overflow-hidden border-none bg-[var(--bg-secondary)] !p-6"
           >
             {/* Semantic Status Accent */}
-            <div className={`absolute top-0 right-0 px-4 py-1 text-[10px] font-black uppercase tracking-[0.15em] rounded-bl-xl ${
-              order.status?.toLowerCase() === 'new' 
-              ? 'bg-[var(--status-info)] text-[var(--bg-primary)]' 
-              : order.status?.toLowerCase() === 'done'
-              ? 'bg-[var(--status-success)] text-[var(--bg-primary)]'
-              : 'bg-[var(--status-warning)] text-[var(--bg-primary)]'
-            }`}>
+            <div className={`absolute top-0 right-0 px-4 py-1 text-[10px] font-black uppercase tracking-[0.15em] rounded-bl-xl ${order.status?.toLowerCase() === 'new'
+                ? 'bg-[var(--status-info)] text-[var(--bg-primary)]'
+                : order.status?.toLowerCase() === 'done'
+                  ? 'bg-[var(--status-success)] text-[var(--bg-primary)]'
+                  : 'bg-[var(--status-warning)] text-[var(--bg-primary)]'
+              }`}>
               {order.status?.replace('_', ' ')}
             </div>
 
@@ -68,7 +67,7 @@ export const WorkerDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4 border-t border-[var(--border-default)] pt-6">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase font-black text-[var(--text-secondary)] tracking-widest">Quantity</span>

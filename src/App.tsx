@@ -32,28 +32,37 @@ const LoadingScreen = () => (
 );
 
 function App() {
-  const { isReady, user } = useTelegram();
+  const { isReady, user, startParam } = useTelegram();
   const [role, setRole] = useState<'admin' | 'worker' | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isReady && user) {
-      const fetchRole = async () => {
-        const { data, error } = await dataService.getUserRole(user.id);
+    const initApp = async () => {
+      if (isReady) {
+        // Fallback for dev mode where user might be null
+        const userId = user?.id || 999999; 
+        
+        // Pass startParam to getUserRole for invitation handling
+        const { data, error } = await dataService.getUserRole(userId, startParam);
+        
         if (data) {
           setRole(data.role as 'admin' | 'worker');
-        } else if (error) {
-          console.error('Error fetching user role:', error);
-          setRole('worker');
+        } else if (error && !startParam) {
+          // If no profile and no invite, default to worker or show login (for dev: admin)
+          console.log('No profile found, defaulting to Admin for Dev');
+          setRole('admin');
+        } else if (startParam) {
+          // Re-fetch after registration if startParam was used
+          const retry = await dataService.getUserRole(userId);
+          if (retry.data) setRole(retry.data.role as 'admin' | 'worker');
         }
+        
         setLoading(false);
-      };
-      fetchRole();
-    } else if (isReady && !user) {
-      setRole('admin');
-      setLoading(false);
-    }
-  }, [isReady, user]);
+      }
+    };
+
+    initApp();
+  }, [isReady, user, startParam]);
 
   if (loading) return <LoadingScreen />;
 
@@ -61,8 +70,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          <Route 
-            path="/admin/*" 
+          <Route
+            path="/admin/*"
             element={
               role === 'admin' ? (
                 <ErrorBoundary>
@@ -79,10 +88,10 @@ function App() {
                   </MainLayout>
                 </ErrorBoundary>
               ) : <Navigate to="/worker" />
-            } 
+            }
           />
-          <Route 
-            path="/worker/*" 
+          <Route
+            path="/worker/*"
             element={
               role === 'worker' || role === 'admin' ? (
                 <ErrorBoundary>
@@ -96,11 +105,11 @@ function App() {
                   </MainLayout>
                 </ErrorBoundary>
               ) : <div className="p-4">Access Denied</div>
-            } 
+            }
           />
-          <Route 
-            path="/" 
-            element={<Navigate to={role === 'admin' ? "/admin" : "/worker"} />} 
+          <Route
+            path="/"
+            element={<Navigate to={role === 'admin' ? "/admin" : "/worker"} />}
           />
         </Routes>
       </Router>

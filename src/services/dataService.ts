@@ -51,6 +51,10 @@ interface Advance {
   created_at: string;
 }
 
+const DEFAULT_PROFILES: Profile[] = [];
+const DEFAULT_ORDERS: Order[] = [];
+
+// System constants
 const STORAGE_KEYS = {
   PROFILES: 'wt_profiles',
   ORDERS: 'wt_orders',
@@ -59,11 +63,6 @@ const STORAGE_KEYS = {
   PRODUCT_TYPES: 'wt_product_types',
   SELECTED_ROLE: 'wt_selected_role'
 };
-
-// Default Initial Data
-const DEFAULT_PROFILES: Profile[] = [];
-
-const DEFAULT_ORDERS: Order[] = [];
 
 const DEFAULT_PRODUCT_TYPES: ProductType[] = [
   { id: '1', name: 'Welding', unit_rate: 150 },
@@ -89,36 +88,69 @@ const saveStorage = (key: string, data: any) => {
 };
 
 export const dataService = {
-  getUserRole: async (telegramId: number) => {
+  getUserRole: async (telegramId: number, startParam?: string) => {
     await delay(300);
     if (IS_DEV || !supabase) {
       let profiles = getStorage<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
-      let userProfiles = profiles.filter(p => p.telegram_id === telegramId);
       
-      // Auto-register both roles if new user
-      if (userProfiles.length === 0) {
-        const adminProfile: Profile = { id: `a_${telegramId}`, telegram_id: telegramId, full_name: 'Admin', role: 'admin', hourly_rate: 200 };
-        const workerProfile: Profile = { id: `w_${telegramId}`, telegram_id: telegramId, full_name: 'Worker', role: 'worker', hourly_rate: 150 };
-        profiles = [...profiles, adminProfile, workerProfile];
-        saveStorage(STORAGE_KEYS.PROFILES, profiles);
-        userProfiles = [adminProfile, workerProfile];
+      // Handle Invitations
+      if (startParam) {
+        if (startParam === 'admin_invite' && !profiles.find(p => p.telegram_id === telegramId && p.role === 'admin')) {
+          const newProfile: Profile = { id: `a_${telegramId}_${Date.now()}`, telegram_id: telegramId, full_name: 'Admin User', role: 'admin' };
+          profiles = [...profiles, newProfile];
+          saveStorage(STORAGE_KEYS.PROFILES, profiles);
+        } else if (startParam.startsWith('invite_worker_')) {
+          const workerId = startParam.replace('invite_worker_', '');
+          // This would normally check if the workerId exists in a pending invitations table
+          if (!profiles.find(p => p.telegram_id === telegramId && p.role === 'worker')) {
+            const newProfile: Profile = { id: workerId, telegram_id: telegramId, full_name: 'New Worker', role: 'worker', hourly_rate: 150 };
+            profiles = [...profiles, newProfile];
+            saveStorage(STORAGE_KEYS.PROFILES, profiles);
+          }
+        }
       }
 
-      const selectedRole = localStorage.getItem(STORAGE_KEYS.SELECTED_ROLE) || 'admin';
+      const userProfiles = profiles.filter(p => p.telegram_id === telegramId);
+      if (userProfiles.length === 0) return { data: null, error: 'No profile found' };
+
+      const selectedRole = localStorage.getItem(STORAGE_KEYS.SELECTED_ROLE) || userProfiles[0].role;
       const currentUser = userProfiles.find(p => p.role === selectedRole) || userProfiles[0];
       
-      return { data: currentUser, error: null };
+      return { 
+        data: { 
+          ...currentUser, 
+          availableRoles: userProfiles.map(p => p.role) 
+        }, 
+        error: null 
+      };
     }
     return await supabase.from('profiles').select('role, id').eq('telegram_id', telegramId).single();
   },
 
+  registerWorker: async (workerData: { id: string, full_name: string }) => {
+    await delay(400);
+    if (IS_DEV || !supabase) {
+      const profiles = getStorage<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
+      const newProfile: Profile = { 
+        id: workerData.id, 
+        telegram_id: 0, // Not yet activated
+        full_name: workerData.full_name, 
+        role: 'worker', 
+        hourly_rate: 150 
+      };
+      saveStorage(STORAGE_KEYS.PROFILES, [...profiles, newProfile]);
+      return { data: newProfile, error: null };
+    }
+    return { data: null, error: 'Not implemented' };
+  },
+
   switchRole: (role: 'admin' | 'worker') => {
     localStorage.setItem(STORAGE_KEYS.SELECTED_ROLE, role);
-    window.location.reload(); // Force reload to re-initialize app with new role
+    window.location.reload();
   },
 
   getSelectedRole: () => {
-    return localStorage.getItem(STORAGE_KEYS.SELECTED_ROLE) || 'admin';
+    return localStorage.getItem(STORAGE_KEYS.SELECTED_ROLE);
   },
 
   getOrders: async () => {

@@ -43,6 +43,7 @@ export const useTelegram = () => {
   return {
     isReady,
     user,
+    startParam: initData.startParam(),
     tg: {
       backButton,
       mainButton,

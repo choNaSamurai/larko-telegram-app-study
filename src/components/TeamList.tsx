@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
-import { User, ChevronRight, Search, Users as UsersIcon } from 'lucide-react';
+import { User, ChevronRight, Search, UserPlus, Copy, Check } from 'lucide-react';
 
 export const TeamList: React.FC = () => {
   const navigate = useNavigate();
   const [workers, setWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteData, setInviteData] = useState({ fullName: '', id: crypto.randomUUID() });
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const loadWorkers = async () => {
@@ -99,15 +102,73 @@ export const TeamList: React.FC = () => {
           </button>
         ))}
 
-        {filteredWorkers.length === 0 && (
-          <div className="py-24 text-center space-y-4 bg-[var(--bg-secondary)] rounded-[2rem] border border-dashed border-[var(--border-default)]">
-            <div className="w-20 h-20 bg-[var(--bg-tertiary)] rounded-full flex items-center justify-center mx-auto text-[var(--text-muted)] opacity-20 relative">
-              <UsersIcon size={40} />
-              <div className="absolute inset-0 rounded-full border border-[var(--accent-primary)] animate-pulse opacity-10" />
+      </div>
+
+      <div className="pt-8">
+        {!showInvite ? (
+          <button 
+            onClick={() => setShowInvite(true)}
+            className="w-full h-16 bg-[var(--bg-secondary)] border border-dashed border-[var(--border-default)] rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--accent-primary)] hover:bg-[var(--accent-glow)] transition-all active:scale-95"
+          >
+            <UserPlus size={18} />
+            INVITE NEW SPECIALIST
+          </button>
+        ) : (
+          <div className="premium-card bg-[var(--bg-secondary)] border-[var(--accent-primary)]/20 shadow-2xl shadow-indigo-500/10 animate-in zoom-in-95 duration-300">
+            <h3 className="font-black text-[var(--text-primary)] uppercase tracking-tighter text-lg mb-6 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary)] flex items-center justify-center text-[var(--bg-primary)]">
+                <UserPlus size={16} strokeWidth={3} />
+              </div>
+              DRAFT INVITATION
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest ml-1">FULL NAME IDENTITY</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. IVAN PETROV"
+                  value={inviteData.fullName}
+                  onChange={(e) => setInviteData({...inviteData, fullName: e.target.value})}
+                  className="w-full h-12 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-xl px-4 font-black text-xs uppercase tracking-widest text-[var(--text-primary)] focus:ring-2 ring-[var(--accent-glow)] outline-none transition-all"
+                />
+              </div>
+
+              {inviteData.fullName && (
+                <div className="pt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 bg-[var(--bg-tertiary)] rounded-xl border border-[var(--border-default)] space-y-2">
+                    <span className="text-[8px] font-black text-[var(--text-secondary)] uppercase tracking-widest">INVITATION TARGET URL</span>
+                    <div className="flex items-center gap-2">
+                      <code className="text-[10px] font-mono font-bold text-[var(--accent-primary)] flex-1 truncate opacity-60">
+                        t.me/WorkTrackerBot/app?startapp=invite_worker_{inviteData.id}
+                      </code>
+                      <button 
+                        onClick={() => {
+                          const link = `https://t.me/WorkTrackerBot/app?startapp=invite_worker_${inviteData.id}`;
+                          navigator.clipboard.writeText(link);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                          dataService.registerWorker({ id: inviteData.id, full_name: inviteData.fullName });
+                        }}
+                        className="w-10 h-10 rounded-lg bg-[var(--bg-secondary)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-all"
+                      >
+                        {copied ? <Check size={18} className="text-[var(--status-success)]" /> : <Copy size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => {
+                      setShowInvite(false);
+                      setInviteData({ fullName: '', id: crypto.randomUUID() });
+                    }}
+                    className="w-full h-12 bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+                  >
+                    FINALIZE & CLOSE
+                  </button>
+                </div>
+              )}
             </div>
-            <p className="text-[var(--text-secondary)] font-black uppercase tracking-[0.2em] text-[10px]">
-              No results match your search
-            </p>
           </div>
         )}
       </div>

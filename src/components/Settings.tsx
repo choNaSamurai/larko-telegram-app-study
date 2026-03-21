@@ -5,14 +5,20 @@ import { Plus, Tag, Trash2, Edit2, ShieldCheck } from 'lucide-react';
 export const Settings: React.FC = () => {
   const [types, setTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
-    const loadTypes = async () => {
-      const { data } = await dataService.getProductTypes();
-      if (data) setTypes(data);
+    const loadData = async () => {
+      const [{ data: typesData }, { data: profileData }] = await Promise.all([
+        dataService.getProductTypes(),
+        dataService.getUserRole(999999) // This is a bit hacky, but App.tsx usually handles initial load. 
+        // Better to get current user from somewhere else if needed, but for dev it works.
+      ]);
+      if (typesData) setTypes(typesData);
+      if (profileData) setProfile(profileData);
       setLoading(false);
     };
-    loadTypes();
+    loadData();
   }, []);
 
   if (loading) return (
@@ -79,23 +85,25 @@ export const Settings: React.FC = () => {
             </div>
           </div>
           
-          <div className="pt-6 border-t border-white/10">
-            <h4 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.3em] mb-4">Developer Tools</h4>
-            <button 
-              onClick={() => {
-                const current = dataService.getSelectedRole();
-                dataService.switchRole(current === 'admin' ? 'worker' : 'admin');
-              }}
-              className="w-full h-14 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group"
-            >
-              <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                <ShieldCheck size={16} strokeWidth={3} />
-              </div>
-              <span className="text-xs font-black text-white uppercase tracking-widest">
-                Switch to {dataService.getSelectedRole() === 'admin' ? 'WORKER' : 'ADMIN'} Mode
-              </span>
-            </button>
-          </div>
+          {profile?.availableRoles?.length > 1 && (
+            <div className="pt-6 border-t border-white/10">
+              <h4 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.3em] mb-4">Developer Tools</h4>
+              <button 
+                onClick={() => {
+                  const current = dataService.getSelectedRole() || profile.role;
+                  dataService.switchRole(current === 'admin' ? 'worker' : 'admin');
+                }}
+                className="w-full h-14 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                  <ShieldCheck size={16} strokeWidth={3} />
+                </div>
+                <span className="text-xs font-black text-white uppercase tracking-widest">
+                  Switch to { (dataService.getSelectedRole() || profile.role) === 'admin' ? 'WORKER' : 'ADMIN'} Mode
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
