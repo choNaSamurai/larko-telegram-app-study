@@ -6,6 +6,7 @@ import {
   viewport, 
   themeParams, 
   miniApp,
+  hapticFeedback,
   initData
 } from '@telegram-apps/sdk-react';
 
@@ -21,6 +22,7 @@ export const useTelegram = () => {
       // Check and mount components if available
       if (miniApp.mount.isAvailable()) miniApp.mount();
       if (viewport.mount.isAvailable()) viewport.mount();
+      if (mainButton.mount.isAvailable()) mainButton.mount();
       
       // Standard TMA initialization
       miniApp.ready();
@@ -44,6 +46,7 @@ export const useTelegram = () => {
     tg: {
       backButton,
       mainButton,
+      hapticFeedback,
       miniApp,
       viewport,
       themeParams,

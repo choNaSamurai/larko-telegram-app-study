@@ -73,18 +73,28 @@ CREATE TABLE advances (
 
 ## Bot/WebApp Interaction Protocol
 
-1. **Authentication**:
-   - WebApp sends `window.Telegram.WebApp.initData` to Supabase Edge Function `/auth`.
-   - Edge Function validates the hash using `BOT_TOKEN`.
-   - If valid, Edge Function provides a Supabase JWT mapped to the user's `telegram_id` in `profiles`.
+### 1. Authentication & Security
+- **Current (Local)**:
+    - Identify user via `window.Telegram.WebApp.initDataUnsafe.user.id`.
+    - Match ID against `localStorage` profiles.
+- **Target (Secure)**:
+    - WebApp sends `window.Telegram.WebApp.initData` to backend.
+    - Backend validates `hash` using `HMAC-SHA256` with `BOT_TOKEN`.
+    - Map verified `telegram_id` to Supabase JWT.
 
-2. **Navigation**:
-   - `admin` role navigates to `/admin` dashboard.
-   - `worker` role navigates to `/worker/tasks`.
+### 2. Interaction Protocol
+- **UX Integration**:
+    - **Haptic Feedback**: Trigger `impactOccurred` or `notificationOccurred` via `Telegram.WebApp.HapticFeedback` on:
+        - Successful data submission (Log/Order).
+        - Status changes.
+        - Tab navigation.
+    - **Main Button**: Map `Telegram.WebApp.MainButton` to primary actions (Submit, Create) for a consistent TMA feel.
 
-3. **Notifications (Outbound)**:
-   - Supabase Webhook on `orders` (insert) -> Edge Function -> Telegram Bot API (`sendMessage`) to `assigned_worker_id`'s `telegram_id`.
-   - Similarly for `advances` and `deadline` alerts (scheduled via Cron/pg_cron or external scheduler).
+- **Data Stability & Performance**:
+    - **Caching (React Query)**: Wrap `dataService` calls in `useQuery`/`useMutation`. Use `staleTime` to reduce unnecessary local/remote reads.
+    - **Error Boundaries**: Wrap role-specific dashboards in React Error Boundaries to prevent total app failure on storage corruption.
 
-4. **Real-time**:
-   - App subscribes to Supabase Realtime for `orders` and `time_logs` to ensure immediate UI feedback when statuses change.
+### 3. Notifications (Outbound)
+- **Status Update**: Triggered on `orders.status` change -> Notify worker.
+- **Finance**: Notify worker on `advances` entry.
+- **Alerts**: Deadline reminders (scheduled).

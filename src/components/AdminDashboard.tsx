@@ -2,24 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Users, PieChart, Settings, Plus, AlertCircle } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import { useQuery } from '@tanstack/react-query';
+import { useHaptic } from '../hooks/useHaptic';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [counts, setCounts] = useState({ orders: 0, workers: 0 });
+  const { impact } = useHaptic();
+
+  const { data: orders = [] } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => dataService.getOrders().then(res => res.data || [])
+  });
+
+  const { data: workers = [] } = useQuery({
+    queryKey: ['workers'],
+    queryFn: () => dataService.getWorkers().then(res => res.data || [])
+  });
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      const [orders, workers] = await Promise.all([
-        dataService.getOrders(),
-        dataService.getWorkers()
-      ]);
-      setCounts({
-        orders: orders.data?.length || 0,
-        workers: workers.data?.length || 0
-      });
-    };
-    fetchCounts();
-  }, []);
+    setCounts({
+      orders: orders.length,
+      workers: workers.length
+    });
+  }, [orders, workers]);
 
   const menuItems = [
     { label: 'Orders', icon: ShoppingBag, path: '/admin/orders', count: counts.orders, color: 'var(--accent-primary)' },
@@ -38,7 +44,10 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-[var(--text-secondary)] font-medium mt-1 uppercase tracking-widest text-[10px]">Company Status</p>
         </div>
         <button 
-          onClick={() => navigate('/admin/orders/new')}
+          onClick={() => {
+            impact('light');
+            navigate('/admin/orders/new');
+          }}
           className="w-12 h-12 bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--accent-glow)] active:scale-90 transition-all"
         >
           <Plus size={28} strokeWidth={3} />
@@ -49,7 +58,10 @@ export const AdminDashboard: React.FC = () => {
         {menuItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => navigate(item.path)}
+            onClick={() => {
+              impact('light');
+              navigate(item.path);
+            }}
             className="premium-card flex flex-col items-center justify-center gap-4 aspect-square group active:scale-95 border-none bg-[var(--bg-secondary)]"
           >
             <div className="p-4 rounded-[2rem] bg-[var(--bg-tertiary)] transition-all group-hover:bg-[var(--bg-primary)]" style={{ color: item.color }}>

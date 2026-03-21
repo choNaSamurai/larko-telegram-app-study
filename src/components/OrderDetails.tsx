@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, CheckCircle, Clock, Calendar, Layers } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import { useHaptic } from '../hooks/useHaptic';
+import { useTelegram } from '../hooks/useTelegram';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Break {
   id: string;
@@ -12,34 +15,86 @@ interface Break {
 export const OrderDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [order, setOrder] = useState<any>(null);
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('17:00');
   const [breaks, setBreaks] = useState<Break[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const { impact, notification } = useHaptic();
+  const { tg } = useTelegram();
+  const queryClient = useQueryClient();
+
+  const { data: orders, isLoading: loading } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => dataService.getOrders().then(res => res.data)
+  });
+
+  const order = orders?.find((o: any) => o.id === id);
+
+  const logMutation = useMutation({
+    mutationFn: (logData: any) => dataService.submitTimeLog(logData),
+    onSuccess: () => {
+      notification('success');
+      setSubmitted(true);
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['balance'] });
+    },
+    onError: (error: any) => {
+      notification('error');
+      console.error('Error submitting log:', error);
+    }
+  });
+
+  const finalizeMutation = useMutation({
+    mutationFn: (orderId: string) => dataService.updateOrderStatus(orderId, 'done'),
+    onSuccess: () => {
+      notification('success');
+      setSubmitted(true);
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (error: any) => {
+      notification('error');
+      console.error('Error finalizing order:', error);
+    }
+  });
+
+  const submitting = logMutation.isPending || finalizeMutation.isPending;
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      if (!id) return;
-      const { data } = await dataService.getOrders();
-      if (data) {
-        const found = data.find((o: any) => o.id === id);
-        setOrder(found);
-      }
-      setLoading(false);
-    };
-    fetchOrder();
-  }, [id]);
+    if (tg.mainButton && order && order.status !== 'done' && !submitted) {
+      tg.mainButton.setParams({
+        text: order.payment_model === 'per_hour' ? 'PUSH RECORDS' : 'FINALIZE PRODUCTION',
+        isVisible: true,
+        isEnabled: !submitting,
+        isLoaderVisible: submitting
+      });
+
+      const offClick = tg.mainButton.onClick(() => {
+        if (order.payment_model === 'per_hour') {
+          // Trigger form submission
+          handleSubmit(new Event('submit') as any);
+        } else {
+          handleFinalize();
+        }
+      });
+
+      return () => {
+        offClick();
+        tg.mainButton.setParams({ isVisible: false });
+      };
+    }
+  }, [tg.mainButton, order, submitting, submitted, startTime, endTime, breaks]);
+
+  // useEffect for fetching is removed in favor of useQuery
 
   const addBreak = () => {
     if (breaks.length < 5) {
+      impact('light');
       setBreaks([...breaks, { id: crypto.randomUUID(), start: '12:00', end: '13:00' }]);
     }
   };
 
   const removeBreak = (breakId: string) => {
+    impact('light');
     setBreaks(breaks.filter(b => b.id !== breakId));
   };
 
@@ -57,24 +112,21 @@ export const OrderDetails: React.FC = () => {
     return Math.max(0, diff).toFixed(2);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     
-    const logData = {
+    logMutation.mutate({
       order_id: id,
       startTime,
       endTime,
       breaks,
       netHours: calculateNetHours()
-    };
+    });
+  };
 
-    const { error } = await dataService.submitTimeLog(logData);
-    if (!error) {
-      setSubmitted(true);
-    } else {
-      console.error('Error submitting log:', error);
-      setSubmitting(false);
+  const handleFinalize = () => {
+    if (order) {
+      finalizeMutation.mutate(order.id);
     }
   };
 
@@ -236,22 +288,13 @@ export const OrderDetails: React.FC = () => {
                 </div>
               </section>
 
-              <button 
-                type="submit"
-                disabled={submitting}
-                className="btn-premium w-full !h-16 text-lg uppercase tracking-[0.2em] font-black shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none transition-shadow"
-              >
-                {submitting ? (
-                  <div className="w-6 h-6 border-4 border-[var(--bg-primary)] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                ) : (
-                  'Push Records'
-                )}
-              </button>
+              {/* Hide manual button as MainButton is used */}
+              <div className="h-16" /> 
             </form>
           ) : (
             /* Mark as Done for per_unit */
-            <div className="space-y-6">
-              <div className="premium-card bg-[var(--bg-secondary)] border-none !p-10 text-center space-y-4">
+            <div className="space-y-6 text-center">
+              <div className="premium-card bg-[var(--bg-secondary)] border-none !p-10 space-y-4">
                 <div className="w-20 h-20 bg-[var(--bg-tertiary)] rounded-full flex items-center justify-center mx-auto text-[var(--status-success)] border border-[var(--border-default)]">
                   <CheckCircle size={40} />
                 </div>
@@ -260,30 +303,14 @@ export const OrderDetails: React.FC = () => {
                   Ensure all {order.quantity} units are produced and verified before closing this assignment.
                 </p>
               </div>
-              <button 
-                onClick={async () => {
-                  setSubmitting(true);
-                  await dataService.updateOrderStatus(order.id, 'done');
-                  setSubmitted(true);
-                  setSubmitting(false);
-                }}
-                disabled={submitting}
-                className="btn-premium w-full !h-16 text-lg uppercase tracking-[0.2em] font-black shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none"
-              >
-                {submitting ? 'Verifying...' : 'Finalize Production'}
-              </button>
+              <div className="h-16" />
             </div>
           )}
           
           {/* Option to mark even hourly tasks as done after some logs */}
           {order.payment_model === 'per_hour' && (
              <button 
-                onClick={async () => {
-                  setSubmitting(true);
-                  await dataService.updateOrderStatus(order.id, 'done');
-                  setSubmitted(true);
-                  setSubmitting(false);
-                }}
+                onClick={handleFinalize}
                 disabled={submitting}
                 className="w-full h-12 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors mt-4"
               >

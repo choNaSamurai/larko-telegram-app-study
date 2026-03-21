@@ -1,21 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
 import { ChevronRight, Layers, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useHaptic } from '../hooks/useHaptic';
 
 export const WorkerDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { impact } = useHaptic();
 
-  useEffect(() => {
-    const loadOrders = async () => {
-      const { data } = await dataService.getOrders();
-      if (data) setOrders(data);
-      setLoading(false);
-    };
-    loadOrders();
-  }, []);
+  const { data: orders = [], isLoading: loading } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => dataService.getOrders().then(res => res.data || [])
+  });
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center p-20 gap-4">
@@ -38,10 +35,13 @@ export const WorkerDashboard: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {orders.map((order) => (
+        {orders.map((order: any) => (
           <div 
             key={order.id} 
-            onClick={() => navigate(`/worker/orders/${order.id}`)}
+            onClick={() => {
+              impact('light');
+              navigate(`/worker/orders/${order.id}`);
+            }}
             className="premium-card group relative active:scale-[0.98] transition-all cursor-pointer overflow-hidden border-none bg-[var(--bg-secondary)] !p-6"
           >
             {/* Semantic Status Accent */}

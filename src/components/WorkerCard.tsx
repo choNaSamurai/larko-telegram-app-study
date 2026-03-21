@@ -2,58 +2,90 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
 import { ArrowLeft, History, PlusCircle, User, Activity, X } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useHaptic } from '../hooks/useHaptic';
+import { useTelegram } from '../hooks/useTelegram';
 
 export const WorkerCard: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [worker, setWorker] = useState<any>(null);
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [showAdvancePopup, setShowAdvancePopup] = useState(false);
+  const { impact, notification } = useHaptic();
+  const { tg } = useTelegram();
+  const queryClient = useQueryClient();
 
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: workers = [] } = useQuery({
+    queryKey: ['workers'],
+    queryFn: () => dataService.getWorkers().then(res => res.data || [])
+  });
 
-  const loadData = async () => {
-    if (!id) return;
-    const [workersRes, ordersRes, historyRes] = await Promise.all([
-      dataService.getWorkers(),
-      dataService.getOrders(),
-      dataService.getTransactionHistory(id)
-    ]);
-    
-    const workerData = workersRes.data?.find((w: any) => w.id === id);
-    if (workerData && ordersRes.data) {
-      const activeCount = ordersRes.data.filter((o: any) => 
-        o.assigned_worker_id === id && o.status !== 'done'
-      ).length;
-      setWorker({ ...workerData, active_orders: activeCount });
-    }
-    
-    if (historyRes.data) {
-      setHistory(historyRes.data);
-    }
-    setLoading(false);
-  };
+  const { data: orders = [] } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => dataService.getOrders().then(res => res.data || [])
+  });
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ['history', id],
+    queryFn: () => dataService.getTransactionHistory(id!).then(res => res.data || []),
+    enabled: !!id
+  });
 
-  const handleIssueAdvance = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !advanceAmount) return;
-    
-    const { error } = await dataService.issueAdvance({
-      worker_id: id,
-      amount: parseFloat(advanceAmount),
+  const workerData = workers.find((w: any) => w.id === id);
+  const activeCount = orders.filter((o: any) => 
+    o.assigned_worker_id === id && o.status !== 'done'
+  ).length;
+
+  const worker = workerData ? { ...workerData, active_orders: activeCount } : null;
+
+  const advanceMutation = useMutation({
+    mutationFn: (amount: number) => dataService.issueAdvance({
+      worker_id: id!,
+      amount,
       description: 'Cash Advance'
-    });
-
-    if (!error) {
+    }),
+    onSuccess: () => {
+      notification('success');
       setShowAdvancePopup(false);
       setAdvanceAmount('');
-      loadData(); // Refresh history and balance
+      queryClient.invalidateQueries({ queryKey: ['history', id] });
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+    },
+    onError: (error: any) => {
+      notification('error');
+      console.error('Error issuing advance:', error);
     }
+  });
+
+  const loading = historyLoading || !worker;
+  const submitting = advanceMutation.isPending;
+
+  useEffect(() => {
+    if (tg.mainButton && showAdvancePopup) {
+      tg.mainButton.setParams({
+        text: 'COMMIT PAYOUT',
+        isVisible: true,
+        isEnabled: !!advanceAmount && !submitting,
+        isLoaderVisible: submitting
+      });
+
+      const offClick = tg.mainButton.onClick(() => {
+        handleIssueAdvance();
+      });
+
+      return () => {
+        offClick();
+        tg.mainButton.setParams({ isVisible: false });
+      };
+    } else if (tg.mainButton) {
+      tg.mainButton.setParams({ isVisible: false });
+    }
+  }, [tg.mainButton, showAdvancePopup, advanceAmount, submitting]);
+
+  const handleIssueAdvance = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!id || !advanceAmount) return;
+    advanceMutation.mutate(parseFloat(advanceAmount));
   };
 
   if (loading || !worker) return (
@@ -107,7 +139,10 @@ export const WorkerCard: React.FC = () => {
       </div>
 
       <button 
-        onClick={() => setShowAdvancePopup(true)}
+        onClick={() => {
+          impact('light');
+          setShowAdvancePopup(true);
+        }}
         className="btn-premium w-full !h-16 flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(212,255,0,0.1)] active:shadow-none transition-all uppercase tracking-[0.2em] font-black italic"
       >
         <PlusCircle size={24} strokeWidth={3} /> 
@@ -170,8 +205,11 @@ export const WorkerCard: React.FC = () => {
           >
             <div className="flex justify-between items-center px-4 py-4">
               <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic">PAYOUT AUTH</h3>
-              <button 
-                onClick={() => setShowAdvancePopup(false)}
+                <button 
+                onClick={() => {
+                  impact('light');
+                  setShowAdvancePopup(false);
+                }}
                 className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] active:scale-90 transition-all border border-[var(--border-default)]"
               >
                 <X size={20} />
@@ -198,17 +236,16 @@ export const WorkerCard: React.FC = () => {
               <div className="flex gap-4 p-2 pb-4">
                 <button 
                   type="button" 
-                  onClick={() => setShowAdvancePopup(false)}
+                  onClick={() => {
+                    impact('light');
+                    setShowAdvancePopup(false);
+                  }}
                   className="flex-1 h-14 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-2xl font-black uppercase tracking-[0.2em] active:scale-95 transition-all border border-[var(--border-default)] text-[10px]"
                 >
                   ABORT
                 </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 h-14 bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-2xl font-black uppercase tracking-[0.2em] active:scale-95 shadow-[0_0_30px_rgba(212,255,0,0.15)] transition-all text-[10px]"
-                >
-                  COMMIT
-                </button>
+                {/* Manual button hidden as MainButton is active */}
+                <div className="flex-1" />
               </div>
             </form>
           </div>

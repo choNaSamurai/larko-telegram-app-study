@@ -20,21 +20,20 @@
 - [ ] Configure Bot commands (optional).
 
 ## 4. Core Feature Implementation
-- [ ] **Auth Layer**: `useTelegram` hook to extract and validate `initData`.
-- [ ] **Layout**: Profile header + Bottom navigation.
-- [ ] **Admin Dashboard**:
-  - `New Order` form.
-  - `Orders List` with status filters.
-  - `Worker Card` with advance issuance.
-- [ ] **Worker Dashboard**:
-  - `My Tasks` feed.
-  - `Order Details` + `Time Log` submission.
-  - `My Balance` summary.
+- [x] **Auth Layer**: `useTelegram` hook to extract `initData`.
+- [ ] **TMA Native UX**:
+  - [ ] Implement `useHaptic` hook for tactile feedback.
+  - [ ] Integrate `Telegram.WebApp.MainButton` into `NewOrder` and `TimeLog` forms.
+- [ ] **Data Stability & Caching**:
+  - [ ] Install and configure `@tanstack/react-query`.
+  - [ ] Refactor `dataService` calls to use `useQuery` / `useMutation`.
+  - [ ] Implement `ErrorBoundary` component for dashboard sections.
 
-## 5. Backend Logic (Edge Functions)
-- [ ] Implement `validate-init-data` function.
-- [ ] Implement `send-notification` function for Telegram Bot API.
+## 5. Backend Logic (Prep & Transition)
+- [ ] Implement `validateInitData` utility (pre-migration) to check `initData` structure.
+- [ ] Prepare Supabase Edge Function skeleton for validation.
 
-## 6. Polishing
+## 6. Polishing & Verification
 - [ ] Add micro-animations (Framer Motion).
 - [ ] Responsive design check (Mobile first for Telegram).
+- [ ] Functional walkthrough of all new features in TMA.
