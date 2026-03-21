@@ -32,7 +32,7 @@ const MOCK_FINANCE = {
 
 export const dataService = {
   getUserRole: async (telegramId: number) => {
-    if (IS_DEV) {
+    if (IS_DEV || !supabase) {
       const user = MOCK_PROFILES.find(p => p.telegram_id === telegramId);
       return { data: user || { role: 'admin' }, error: null };
     }
@@ -40,18 +40,17 @@ export const dataService = {
   },
 
   getOrders: async () => {
-    if (IS_DEV) return { data: MOCK_ORDERS, error: null };
+    if (IS_DEV || !supabase) return { data: MOCK_ORDERS, error: null };
     return await supabase.from('orders').select('*').order('created_at', { ascending: false });
   },
 
   getBalance: async (_telegramId: number) => {
-    if (IS_DEV) return { data: MOCK_BALANCE, error: null };
-    // Real Supabase logic would aggregate orders/hours and subtract advances
+    if (IS_DEV || !supabase) return { data: MOCK_BALANCE, error: null };
     return { data: MOCK_BALANCE, error: null };
   },
 
   getWorkers: async () => {
-    if (IS_DEV) return { data: MOCK_WORKERS, error: null };
+    if (IS_DEV || !supabase) return { data: MOCK_WORKERS, error: null };
     return await supabase.from('profiles').select('*').eq('role', 'worker');
   },
 

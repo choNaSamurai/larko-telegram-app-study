@@ -13,7 +13,7 @@ export const WorkerCard: React.FC = () => {
   useEffect(() => {
     const loadWorker = async () => {
       const { data } = await dataService.getWorkers();
-      const found = data?.find(w => w.id === id);
+      const found = data?.find((w: any) => w.id === id);
       setWorker(found);
     };
     loadWorker();
