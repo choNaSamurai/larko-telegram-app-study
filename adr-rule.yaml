@@ -2,9 +2,10 @@ rule:
   name: adr_triggers_tma_architecture_analysis
   description: >
     Whenever the user sends a message in the format "ADR [scenario/*]",
-    the system must invoke the software_architect_tma role to produce a
-    Telegram Mini App Architecture & Tech Stack analysis based on Figma,
-    internal BA context, and the provided scenario file.
+    the system must invoke the software_architect_tma role to produce an
+    Industrial-grade Architecture & Tech Stack analysis. Includes mandatory
+    file structure mapping, TanStack Query cache policies (stale/gc), and 
+    fallback assumptions for [BLOCKING] questions.
 
   trigger:
     type: message_pattern
@@ -23,6 +24,8 @@ rule:
           navigation_model: single_surface
           auth: telegram_user
           state_management: lightweight
+          offline_support: high
+          caching_strategy: advanced
           performance_priority: high
           backend_integration: api_first
 

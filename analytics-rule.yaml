@@ -2,8 +2,10 @@ rule:
   name: analyze_command_triggers_system_analyst
   description: >
     Whenever the user sends a message in the format "Analyze [url]",
-    the system must automatically invoke the system_analyst role
-    to perform a product-technical analysis.
+    the system must invoke the system_analyst role to produce a deep
+    technical analysis. Includes Figma Node ID extraction for every element,
+    mapping of all BRD statuses (including edge cases), and explicit 
+    pagination state definitions (empty-ever vs empty-page).
 
   trigger:
     type: message_pattern

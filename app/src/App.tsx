@@ -1,11 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePreferencesStore } from './store/usePreferencesStore';
 import { W1MyTasks } from './pages/W1MyTasks';
 import { W3MyBalanceScreen } from './pages/W3MyBalance';
+import { ProfileScreen } from './features/profile/screens/ProfileScreen';
 
 type ActiveTab = 'tasks' | 'balance' | 'profile';
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('tasks');
+  const theme = usePreferencesStore((state) => state.theme);
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   return (
     <div className="max-w-[420px] mx-auto min-h-screen border-x border-white/5 shadow-2xl overflow-hidden relative">
@@ -20,9 +31,7 @@ function App() {
           />
         )}
         {activeTab === 'profile' && (
-          <div className="min-h-screen bg-bg-primary flex items-center justify-center">
-            <p className="text-content-secondary text-sm">Профіль — в розробці</p>
-          </div>
+          <ProfileScreen />
         )}
       </div>
 
