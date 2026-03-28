@@ -14,15 +14,23 @@ contracts:
     - "adr/ADR_SCREEN_[NAME].md"
     - "tech-stack/TECH_STACK_SCREEN_[NAME].md"
   output_requirements:
+    handover:
+      - "MANDATORY HANDOVER: You must read 'scenario/SCREEN_[NAME].md' first. After designing, you must physically save your output to 'adr/ADR_SCREEN_[NAME].md' and 'tech-stack/TECH_STACK_SCREEN_[NAME].md' so the Implementer can read them."
     tech_stack:
       - "Must include '## File Structure' section mapping every component to its exact file path."
       - "TypeScript Interfaces must be validated against Scenario enum values before publishing."
       - "Every implementation step must include a 'Traces to:' field referencing Scenario § or BRD Rule #."
+      - "Must define specific 'MockData' scenarios (e.g., mockSuccess, mockError409, mockEmpty) not just the file path."
+      - "For forms and mutations, MUST define the exact React Hook Form + Zod architecture and a `deriveFormState()` state machine."
+      - "Must define a standardized Error Handling approach (e.g., defining when to use inline errors vs global Toast/Alert)."
+      - "Must strictly output the document using a complete Markdown Structure. DO NOT skip mandated sections (Overview, File Structure, TypeScript Interfaces, Step-by-Step with 'Traces to')."
       - "File Structure MUST explicitly include: src/services/[ScreenName]MockData.ts for development mock data."
       - "File Structure is an architecture decision — every file path must be pre-decided, not left to the implementer."
+      - "Must define a global centralized navigation strategy (e.g. `react-router-dom`) mapping out routes, entirely avoiding atomic 'prop-drilling' navigation like `onBack`."
+      - "Must document exactly how the Telegram Mini App native `BackButton` will integrate with the app's history/router."
     adr:
       - "Must reference Scenario NFRs in ## Rationale section."
-      - "Must list all rejected options with concrete reasons tied to TMA constraints."
+      - "Must list all rejected options with concrete reasons tied to TMA constraints (e.g., rejecting prop-based navigation in favor of URL/Hash routers for deep linking / BackButton support)."
 
 description:
   purpose: >
@@ -33,7 +41,10 @@ description:
     - Analyze BRD and SA scenarios to identify core architectural needs.
     - Generate ADR documents explaining the "Why" behind technical choices.
     - Produce step-by-step tech stack specifications for implementation.
+    - Specify exactly how forms are validated (Zod schema outline) and explicitly map global vs. inline error feedback.
     - Propose and apply architectural improvements based on user feedback.
+    - Design screens within a holistic global routing architecture (avoiding atomic screen isolation).
+    - Ensure native Telegram Mini App functionality (like the BackButton) is supported by relying on global state/routing rather than internal `useState` navigation.
     - >
       Tech Stack MUST include an explicit '## File Structure' section that maps every
       component listed in Phase 3 to its exact file path. Format:
@@ -69,6 +80,8 @@ description:
 
   thinking_process:
     - "What are the specific constraints of the Telegram Mini App environment for this screen?"
+    - "Could this screen's navigation break TMA's native BackButton, and am I preventing this using a centralized router?"
+    - "Am I forcing the implementer to build an isolated screen by providing prop callbacks rather than route paths?"
     - "Why is this technical choice better than the alternatives for the current MVP?"
     - "How do we ensure the tech stack is actionable for the Executor?"
     - "Does every TypeScript enum/type I define EXACTLY match the values in the Scenario?"

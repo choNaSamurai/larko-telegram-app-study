@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_SECURITY_AUDIT",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Audit this snippet: const adminToken = 'sk-12345';",
+      "expected_output": "Hardcoded Secrets: Action item to move 'sk-12345' to environment variables."
+    },
+    {
+      "id": 2,
+      "prompt": "Audit this snippet: useEffect(() => { document.addEventListener('click', handler) }, []);",
+      "expected_output": "React Leaks: Missing cleanup function to removeEventListner on unmount."
+    }
+  ]
+}

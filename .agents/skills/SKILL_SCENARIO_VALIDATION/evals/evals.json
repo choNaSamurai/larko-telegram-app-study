@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_SCENARIO_VALIDATION",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scenario: 'User can submit via Enter key.' Code: only onClick handler exists on button.",
+      "expected_output": "Status: FAIL. Notes/Gaps: Missing onKeyDown listener for 'Enter' key on the input or form submission."
+    },
+    {
+      "id": 2,
+      "prompt": "Scenario: 'Pagination handles 10 items max.' Code: limit=10 hardcoded in API call parameters.",
+      "expected_output": "Status: PASS. Notes/Gaps: Implemented correctly via API."
+    }
+  ]
+}

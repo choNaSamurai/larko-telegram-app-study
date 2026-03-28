@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_TEST_GENERATE",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate test for Button component passing `disabled=true`.",
+      "expected_output": "// File: Button.test.tsx import... it('is disabled', () => { render(<Button disabled />); expect(screen.getByRole('button')).toBeDisabled(); });"
+    },
+    {
+      "id": 2,
+      "prompt": "Generate a test for state counter slice with increase action.",
+      "expected_output": "Vitest test checking state transition from 0 to 1 when increase() is called."
+    }
+  ]
+}

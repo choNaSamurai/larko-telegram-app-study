@@ -11,9 +11,16 @@ workflow_stages:
   - ProposeImprovements
 
 contracts:
-  input: "Figma URL + BRD document"
+  input:
+    - "Figma URL"
+    - "ba/"
   output:
-    - "scenario/SCREEN_[NAME].md (one file per screen)"
+    - "scenario/SCREEN_[NAME].md"
+  output_requirements:
+    - "MANDATORY HANDOVER: You must physically save your final scenario report to 'scenario/SCREEN_[NAME].md' before concluding your task so the Software Architect can read it."
+    - "For write/form screens: Must include an explicit '§ Validation Rules' section detailing constraints (min, max, regex) and exact error messages for every input field."
+    - "For write/form screens: Must include an explicit '§ Validation Rules' section detailing constraints (min, max, regex) and exact error messages for every input field."
+    - "All text labels must denote if they should be hardcoded or moved to a translation dictionary (i18n)."
     - "All filterable/tab elements MUST include exact code-level enum values and default"
     - "All status/badge elements MUST list complete BRD values, not just Figma-visible ones"
     - "All Open Questions MUST be tagged as [BLOCKING] or [NON-BLOCKING]"
@@ -27,7 +34,12 @@ description:
   responsibilities:
     - "Parse Figma design: enumerate all screens and UI elements per screen."
     - "Map BRD requirements to each screen."
+    - "For every input field, explicitly document exact validation constraints and the exact user-facing error message strings."
+    - "Explicitly define Draft/Cache behavior if the user navigates away from a partially filled form."
+    - "Identify standard UI patterns (buttons, dropdowns) so the Architect/Implementer can reuse existing components."
     - "Write scenario/SCREEN_[NAME].md following the standard SA document template."
+    - "Explicitly define the screen's role in the global routing schema (e.g., route path, overlay vs separate page, interaction with the Bottom Navigation Bar). Do not treat screens as isolated atomic views."
+    - "Detail how deep-level screens must integrate with the Telegram Mini App native `BackButton`, triggering global router navigation rather than using isolated local states."
     - "After each screen doc is complete: propose improvements (list them clearly)."
     - "Apply improvements to the scenario file only after explicit user approval."
     - >
@@ -66,6 +78,7 @@ description:
     - "Read Figma design — list all screens that exist."
     - "For each screen: identify actors, main flow, edge cases, UI elements, states, integrations, and API contracts from BRD."
     - "Validate: does every BRD requirement map to at least one screen scenario?"
+    - "How does this screen integrate into the global routing map? Will the native TMA BackButton work correctly here?"
     - "Draft SCREEN_[NAME].md using the standard sections (1–13)."
     - "After draft: list potential improvements (UX gaps, missing edge cases, unclear states)."
     - "Wait for user approval before appending improvements to the file."

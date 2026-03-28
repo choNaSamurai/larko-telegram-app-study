@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_CODE_REVIEW",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this snippet: const fetchUser = () => axios.get('/user'); (ADR requires TanStack Query)",
+      "expected_output": "Status: FAIL. Major Violation: Direct axios call instead of TanStack Query useQuery hook."
+    },
+    {
+      "id": 2,
+      "prompt": "Review this code: cleanly integrated Zustand store based exactly on the provided ADR.",
+      "expected_output": "Status: PASS. No architectural violations found."
+    }
+  ]
+}

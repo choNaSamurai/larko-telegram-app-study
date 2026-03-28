@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_FIGMA_COMPARE",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Compare: Figma says padding 16px. Code says p-4.",
+      "expected_output": "Match Level: 100%. p-4 in Tailwind equals 16px."
+    },
+    {
+      "id": 2,
+      "prompt": "Compare: Figma says #000000. Code says text-gray-900.",
+      "expected_output": "Match Level: Requires Fixes. Change text-gray-900 to text-black."
+    }
+  ]
+}
