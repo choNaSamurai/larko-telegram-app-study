@@ -3,11 +3,13 @@ import { usePreferencesStore } from './store/usePreferencesStore';
 import { W1MyTasks } from './pages/W1MyTasks';
 import { W3MyBalanceScreen } from './pages/W3MyBalance';
 import { ProfileScreen } from './features/profile/screens/ProfileScreen';
+import { AbsencesScreen } from './features/absences/screens/AbsencesScreen';
 
 type ActiveTab = 'tasks' | 'balance' | 'profile';
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('tasks');
+  const [activeScreen, setActiveScreen] = useState<'main' | 'absences'>('main');
   const theme = usePreferencesStore((state) => state.theme);
 
   useEffect(() => {
@@ -17,6 +19,17 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  if (activeScreen === 'absences') {
+    return (
+      <div className="max-w-[420px] mx-auto min-h-screen border-x border-white/5 shadow-2xl relative">
+        <AbsencesScreen 
+          onBack={() => setActiveScreen('main')} 
+          onNavigateToNewRequest={() => console.log('Navigate to W6')} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[420px] mx-auto min-h-screen border-x border-white/5 shadow-2xl overflow-hidden relative">
@@ -31,7 +44,7 @@ function App() {
           />
         )}
         {activeTab === 'profile' && (
-          <ProfileScreen />
+          <ProfileScreen onNavigateToAbsences={() => setActiveScreen('absences')} />
         )}
       </div>
 

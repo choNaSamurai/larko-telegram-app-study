@@ -3,7 +3,7 @@ import { CalendarRange, ChevronRight, HelpCircle } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
 
-export const OptionsCard = () => {
+export const OptionsCard = ({ onNavigateToAbsences }: { onNavigateToAbsences?: () => void }) => {
   const { t } = useTranslation();
 
   const handleSupportClick = () => {
@@ -24,8 +24,9 @@ export const OptionsCard = () => {
   };
 
   const handleTimeOffClick = () => {
-    // Will navigate to W5 Absences in future iterations
-    console.log('Navigate to W5 Absences');
+    if (onNavigateToAbsences) {
+      onNavigateToAbsences();
+    }
   };
 
   return (

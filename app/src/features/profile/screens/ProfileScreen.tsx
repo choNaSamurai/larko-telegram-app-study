@@ -12,7 +12,7 @@ const deriveScreenState = (isLoading: boolean, isError: boolean, data: UserProfi
   return 'populated';
 };
 
-export const ProfileScreen = () => {
+export const ProfileScreen = ({ onNavigateToAbsences }: { onNavigateToAbsences?: () => void }) => {
   const { data, isLoading, isError } = useProfileQuery();
   const screenState = deriveScreenState(isLoading, isError, data);
 
@@ -82,7 +82,7 @@ export const ProfileScreen = () => {
           <div className="h-1/4" />
         </div>
       ) : (
-        <OptionsCard />
+        <OptionsCard onNavigateToAbsences={onNavigateToAbsences} />
       )}
     </div>
   );
