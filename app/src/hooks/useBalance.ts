@@ -17,6 +17,8 @@ export function currentPeriod(): string {
   return `${y}-${m}`;
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 // Simulated fetch for summary
 const fetchBalanceSummary = async (
   _workerId: string,

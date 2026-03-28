@@ -4,12 +4,13 @@ import { W1MyTasks } from './pages/W1MyTasks';
 import { W3MyBalanceScreen } from './pages/W3MyBalance';
 import { ProfileScreen } from './features/profile/screens/ProfileScreen';
 import { AbsencesScreen } from './features/absences/screens/AbsencesScreen';
+import { NewRequestScreen } from './features/absences/screens/NewRequestScreen';
 
 type ActiveTab = 'tasks' | 'balance' | 'profile';
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('tasks');
-  const [activeScreen, setActiveScreen] = useState<'main' | 'absences'>('main');
+  const [activeScreen, setActiveScreen] = useState<'main' | 'absences' | 'newRequest'>('main');
   const theme = usePreferencesStore((state) => state.theme);
 
   useEffect(() => {
@@ -22,10 +23,21 @@ function App() {
 
   if (activeScreen === 'absences') {
     return (
-      <div className="max-w-[420px] mx-auto min-h-screen border-x border-white/5 shadow-2xl relative">
+      <div className="max-w-[420px] mx-auto min-h-screen bg-bg-primary overflow-x-hidden relative shadow-2xl">
         <AbsencesScreen 
           onBack={() => setActiveScreen('main')} 
-          onNavigateToNewRequest={() => console.log('Navigate to W6')} 
+          onNavigateToNewRequest={() => setActiveScreen('newRequest')} 
+        />
+      </div>
+    );
+  }
+
+  if (activeScreen === 'newRequest') {
+    return (
+      <div className="max-w-[420px] mx-auto min-h-screen bg-bg-primary overflow-x-hidden relative shadow-2xl">
+        <NewRequestScreen 
+          companyId="company_1" // Hardcoded for MVP context, normally from auth/store
+          onBack={() => setActiveScreen('absences')} 
         />
       </div>
     );
