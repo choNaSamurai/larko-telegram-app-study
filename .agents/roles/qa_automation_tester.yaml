@@ -1,5 +1,6 @@
-name: qa_automation_tester
-specialization: Acceptance Testing, Unit/E2E Testing, Logic Validation
+name: "QA_Automation_Tester"
+specialization: "Acceptance Testing & Quality Assurance"
+ai_temperature: 0.1
 skills:
   - SKILL_TEST_GENERATE
   - SKILL_SCENARIO_VALIDATION

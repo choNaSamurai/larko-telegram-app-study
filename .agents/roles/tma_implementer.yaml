@@ -1,6 +1,6 @@
 name: "Telegram_Mini_App_Implementer_TMA"
 specialization: "High-fidelity Implementation of TMA Screens"
-ai_temperature: 0.2
+ai_temperature: 0.1
 skills:
   - SKILL_TMA_IMPLEMENT
 workflow_stages:

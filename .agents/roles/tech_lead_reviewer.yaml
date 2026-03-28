@@ -1,5 +1,6 @@
-name: tech_lead_reviewer
-specialization: Code Review, Architectural Compliance, Static Analysis
+name: "Tech_Lead_Reviewer"
+specialization: "Code Quality & Architectural Review"
+ai_temperature: 0.1
 skills:
   - SKILL_CODE_REVIEW
   - SKILL_SECURITY_AUDIT

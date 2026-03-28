@@ -1,5 +1,6 @@
-name: ui_ux_validator
-specialization: UI/UX Consistency, Pixel-perfect Validation
+name: "UI_UX_Validator"
+specialization: "Visual QA & Figma Compliance"
+ai_temperature: 0.1
 skills:
   - SKILL_FIGMA_COMPARE
   - SKILL_VISUAL_QA

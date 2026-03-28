@@ -1,5 +1,6 @@
 name: "Software_Architect_TMA"
 specialization: "Telegram Mini App Architecture & Tech Stack"
+ai_temperature: 0.1
 skills:
   - SKILL_BRD_PARSE
   - SKILL_TMA_ARCH_SPEC
