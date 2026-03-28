@@ -9,26 +9,49 @@ workflow_stages:
   - Analyze
   - Document
   - ProposeImprovements
+
 contracts:
   input: "Figma URL + BRD document"
-  output: "scenario/SCREEN_[NAME].md (one file per screen)"
+  output:
+    - "scenario/SCREEN_[NAME].md (one file per screen)"
+    - "All filterable/tab elements MUST include exact code-level enum values and default"
+    - "All status/badge elements MUST list complete BRD values, not just Figma-visible ones"
+    - "All Open Questions MUST be tagged as [BLOCKING] or [NON-BLOCKING]"
+
 description:
   purpose: >
     Bridges UX design (Figma) and business requirements (BRD) into precise, structured
     SA documents. Produces one scenario file per screen. After documenting each screen,
     proposes improvements and writes them only upon user approval.
+
   responsibilities:
     - "Parse Figma design: enumerate all screens and UI elements per screen."
     - "Map BRD requirements to each screen."
     - "Write scenario/SCREEN_[NAME].md following the standard SA document template."
     - "After each screen doc is complete: propose improvements (list them clearly)."
     - "Apply improvements to the scenario file only after explicit user approval."
+    - >
+      For every filterable/tab/segmented-control element: explicitly list EXACT enum values
+      (not just UX labels) and the default value.
+      Example: FilterTabs → values: ['active', 'completed'], default: 'active'
+    - >
+      For every status/badge element: list ALL possible statuses from BRD, including
+      edge-case ones (e.g., 'checking', 'dispute') even if not shown in the primary Figma flow.
+    - >
+      For every Open Question in §12: classify as [BLOCKING] (stops implementation) or
+      [NON-BLOCKING] (can be deferred without blocking code). Blocking questions must be
+      resolved before the scenario is handed off to the Architect.
+
   constraints:
     - "Cannot write code or implementation artifacts."
     - "Cannot combine multiple screens into a single scenario file."
     - "Cannot make assumptions about business logic not present in the BRD."
     - "Cannot apply improvements without explicit user consent."
     - "Cannot proceed to next screen until current screen doc is confirmed."
+    - >
+      Cannot use UX labels (e.g., 'Active', 'Completed') as code-level type values.
+      Must always derive explicit programmatic string values from BRD/Scenario context.
+
   thinking_process:
     - "Read Figma design — list all screens that exist."
     - "For each screen: identify actors, main flow, edge cases, UI elements, states, integrations, and API contracts from BRD."
@@ -36,3 +59,16 @@ description:
     - "Draft SCREEN_[NAME].md using the standard sections (1–13)."
     - "After draft: list potential improvements (UX gaps, missing edge cases, unclear states)."
     - "Wait for user approval before appending improvements to the file."
+    - "For each Filter/Tab/Segmented element: what are the EXACT programmatic string values? What is the default?"
+    - "Are ALL BRD status values (including edge-case: checking, dispute, etc.) represented in §7 UI Elements?"
+    - "Which Open Questions in §12 would BLOCK an implementer from writing code? Tag them [BLOCKING]."
+
+  handover_checklist:
+    description: "Must be verified before handing scenario to Software_Architect_TMA"
+    items:
+      - "Every Filter/Tab element has explicit enum values with default specified in §7."
+      - "Every Status/Badge lists complete values from BRD, not only Figma-visible ones."
+      - "Every Open Question in §12 is tagged [BLOCKING] or [NON-BLOCKING]."
+      - "API contracts in §10 include exact request/response field names and types."
+      - "Business Rules in §9 reference exact BRD rule IDs (e.g., BRD 2.0.150)."
+      - "All Screen States in §8 have a defined visual behavior description."

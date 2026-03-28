@@ -83,20 +83,6 @@ export function W1MyTasks() {
         isOpen={isSwitcherOpen} 
         onClose={() => setIsSwitcherOpen(false)} 
       />
-      
-      {/* Bottom Navigation Mock */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-bg-card/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-6 z-50 max-w-[420px] mx-auto">
-         <div className="flex flex-col items-center gap-1 text-white">
-            <div className="size-1 rounded-full bg-white mb-0.5" />
-            <span className="text-[10px] font-bold">Tasks</span>
-         </div>
-         <div className="flex flex-col items-center gap-1 text-content-secondary opacity-50">
-            <span className="text-[10px] font-medium">Balance</span>
-         </div>
-         <div className="flex flex-col items-center gap-1 text-content-secondary opacity-50">
-            <span className="text-[10px] font-medium">Profile</span>
-         </div>
-      </nav>
     </div>
   );
 }

@@ -40,3 +40,14 @@
     @apply bg-bg-card backdrop-blur-md border-[0.5px] border-white/5;
   }
 }
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

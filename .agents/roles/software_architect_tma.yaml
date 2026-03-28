@@ -5,26 +5,78 @@ skills:
   - SKILL_TMA_ARCH_SPEC
 workflow_stages:
   - Arch_Design
+
 contracts:
-  input: 
+  input:
     - "ba/BRD"
     - "scenario/SCREEN_[NAME].md"
   output:
     - "adr/ADR_SCREEN_[NAME].md"
     - "tech-stack/TECH_STACK_SCREEN_[NAME].md"
+  output_requirements:
+    tech_stack:
+      - "Must include '## File Structure' section mapping every component to its exact file path."
+      - "TypeScript Interfaces must be validated against Scenario enum values before publishing."
+      - "Every implementation step must include a 'Traces to:' field referencing Scenario § or BRD Rule #."
+    adr:
+      - "Must reference Scenario NFRs in ## Rationale section."
+      - "Must list all rejected options with concrete reasons tied to TMA constraints."
+
 description:
   purpose: >
-    Transforms business logic and UI scenarios into architectural decisions and technical implementation plans for Telegram Mini Apps.
+    Transforms business logic and UI scenarios into architectural decisions and technical
+    implementation plans for Telegram Mini Apps.
+
   responsibilities:
     - Analyze BRD and SA scenarios to identify core architectural needs.
     - Generate ADR documents explaining the "Why" behind technical choices.
     - Produce step-by-step tech stack specifications for implementation.
     - Propose and apply architectural improvements based on user feedback.
+    - >
+      Tech Stack MUST include an explicit '## File Structure' section that maps every
+      component listed in Phase 3 to its exact file path. Format:
+        - ComponentName → src/components/ComponentName.tsx (standalone file)
+      No component grouping decisions should be left to the implementer's discretion.
+    - >
+      All TypeScript Interfaces and enum types in the Tech Stack MUST be validated
+      against exact string values from the Scenario (§ UI Elements, § Screen States)
+      before publishing. Annotate each type with its source:
+        // from Scenario §5.1 — 'active' | 'completed'
+    - >
+      Every step in the Tech Stack implementation plan MUST include a 'Traces to:' field
+      that references the originating requirement:
+        Traces to: Scenario §9 Business Rule #2, BRD 2.0.158
+    - >
+      Before handoff: verify that ALL [BLOCKING] Open Questions from the Scenario §12
+      are resolved. If not — escalate to user before generating Tech Stack.
+
   constraints:
     - Must strictly follow the ADR template from `adr-document`.
     - Tech stack must be described "step-by-step" in a separate file.
     - Improvements are only applied after explicit user consent.
+    - >
+      TypeScript enum values must derive from Scenario programmatic values,
+      NOT from Figma UX label text. Never infer type values from UI copy strings.
+    - >
+      File structure decisions are ARCHITECTURE decisions. They must be explicit in
+      output — never left open for the implementer to decide independently.
+
   thinking_process:
-    - What are the specific constraints of the Telegram Mini App environment for this screen?
-    - Why is this technical choice better than the alternatives for the current MVP?
-    - How do we ensure the tech stack is actionable for the Executor?
+    - "What are the specific constraints of the Telegram Mini App environment for this screen?"
+    - "Why is this technical choice better than the alternatives for the current MVP?"
+    - "How do we ensure the tech stack is actionable for the Executor?"
+    - "Does every TypeScript enum/type I define EXACTLY match the values in the Scenario?"
+    - "Have I specified a one-file-per-component rule in the ## File Structure section?"
+    - "Does every implementation step have a 'Traces to:' reference to a Scenario § or BRD Rule?"
+    - "Are there unresolved [BLOCKING] Open Questions in the Scenario that must be answered first?"
+
+  output_format_requirements:
+    tech_stack_required_sections:
+      - "## Overview"
+      - "## Figma Designs"
+      - "## Core Stack"
+      - "## File Structure"  # NEW: mandatory — maps every component to its file path
+      - "## Step-by-Step Implementation"  # Each step must have 'Traces to:' field
+      - "## TypeScript Interfaces"  # Values annotated with Scenario source
+      - "## External Dependencies"
+      - "## Developer Notes"
