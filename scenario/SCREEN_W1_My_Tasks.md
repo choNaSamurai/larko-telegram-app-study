@@ -3,6 +3,13 @@
 ## 1. Screen Overview
 This screen is the primary home interface for the Worker role in the Larko Telegram Mini App. It provides a vertical feed of active and completed orders assigned specifically to the authenticated worker. Its purpose is to give the worker a quick overview of their current workload, deadlines, and basic task details, acting as the starting point for daily operations.
 
+## 1.1 Figma Designs
+- **Screen (Primary)**: [W1-screen-primary](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=74-4556&m=dev), [W1-screen-secondary](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=194-6622&m=dev)
+- **Loading State**: [W1-loading-1](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=74-4885&m=dev), [W1-loading-2](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=74-4931&m=dev)
+- **Empty State**: [W1-empty-1](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=74-4795&m=dev), [W1-empty-2](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=74-4839&m=dev)
+- **Error State**: [W1-error-1](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=83-6218&m=dev), [W1-error-2](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=83-6262&m=dev)
+- **Company Switcher**: [Switcher-1](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=90-8571&m=dev), [Switcher-2](https://www.figma.com/design/woOZkYwuAowPdLzmi4LgXG/Larko-Design?node-id=90-8503&m=dev)
+
 ## 2. Actors
 - **Worker**: The primary user who views and interacts with their tasks.
 - **System**: The backend that provides the order data and manages status updates.
@@ -74,5 +81,4 @@ This screen is the primary home interface for the Worker role in the Larko Teleg
 
 ## 13. Proposed Improvements (PENDING APPROVAL)
 - [ ] Add a "Quick Log" button to the card to allow 8h entry without opening the Hub.
-- [ ] Implement pull-to-refresh for manual feed updates.
 - [ ] Add a search bar to filter tasks by name/client directly on the feed.
