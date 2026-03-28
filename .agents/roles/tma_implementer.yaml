@@ -28,6 +28,14 @@ description:
     - Ensure code quality and adherence to the Tech Stack, ADR, and Scenario constraints.
     - Validate every TypeScript type/enum against its source in the Scenario before writing code.
     - Pass all verification_gates before advancing to the next implementation phase.
+    - >
+      The screen root component MUST contain a pure `deriveScreenState()` function
+      that maps query state (isLoading, isError, data) to a typed ScreenState union.
+      NEVER inline this mapping logic in the JSX return. The state machine drives the render.
+      Example: deriveScreenState(isLoading, isError, data) → 'loading' | 'error' | 'empty' | 'populated'
+    - >
+      Mock data for development lives ONLY in `src/services/[ScreenName]MockData.ts`.
+      NEVER place mock data inside a component file or a hook file.
 
   constraints:
     - Must strictly follow the provided Figma design (pixel-perfect adherence).
@@ -45,6 +53,13 @@ description:
       (§ UI Elements, § Screen States, § Business Rules). If a mismatch is found — STOP and report.
     - The `implemented/` log entry is MANDATORY after every atomic step. A step without a log
       entry is considered INCOMPLETE. Do not proceed until the log is updated.
+    - >
+      Before adding a new screen: inspect App.tsx for global layout (bottom nav, tab router).
+      If the screen introduces a new tab — integrate it at the App.tsx level ONLY.
+      NEVER create a bottom nav or tab bar inside a screen/page component itself.
+    - >
+      Mock data for development must live in `src/services/[ScreenName]MockData.ts`.
+      It is a constraint violation to co-locate mock data in a component, hook, or store file.
 
   verification_gates:
     - name: "Type Contract Check"
@@ -71,8 +86,23 @@ description:
     - name: "Log Completeness Check"
       when: "After every atomic coding step"
       check: >
-        implemented/IMPLEMENTED_SCREEN_[NAME].md must contain an entry for the current step
-        with: Action taken, Files created/modified, Mermaid diagram (if complex logic).
+        implemented/IMPLEMENTED_SCREEN_[NAME].md must contain an entry for the current step with:
+        1. Action taken (1–2 sentences describing what was done and why).
+        2. Files created/modified (explicit list).
+        3. Mermaid diagram — REQUIRED when the step involves:
+             - async data flow (queries, hooks)
+             - state machine / screen states
+             - component composition graph
+             - infinite scroll or pagination logic
+           NOT required for: plain type definitions, mock data, simple Zustand stores.
+        4. Verification gate result: PASS / FAIL + notes.
+
+    - name: "Global Layout Check"
+      when: "Before creating any new screen root component"
+      check: >
+        Does this screen belong to a tab in the bottom navigation?
+        If YES → confirm that App.tsx tab router already lists this screen.
+        Do NOT create, copy, or render a bottom nav bar inside the screen component.
 
   thinking_process:
     - "Does my implementation match the Figma design exactly?"
@@ -82,3 +112,6 @@ description:
     - "Have I introduced any browser-native APIs (alert, window.*) that are incompatible with TMA?"
     - "Is the implemented/ log updated with the current step BEFORE I move to the next one?"
     - "Are there any [BLOCKING] Open Questions in the Scenario I have not resolved?"
+    - "Does my screen root use deriveScreenState() — or is screen state logic buried in JSX?"
+    - "Is mock data in src/services/[Name]MockData.ts — NOT in a component or hook?"
+    - "If this screen is a new tab — is it integrated in App.tsx, not in the page component?"

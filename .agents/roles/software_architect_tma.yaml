@@ -18,6 +18,8 @@ contracts:
       - "Must include '## File Structure' section mapping every component to its exact file path."
       - "TypeScript Interfaces must be validated against Scenario enum values before publishing."
       - "Every implementation step must include a 'Traces to:' field referencing Scenario § or BRD Rule #."
+      - "File Structure MUST explicitly include: src/services/[ScreenName]MockData.ts for development mock data."
+      - "File Structure is an architecture decision — every file path must be pre-decided, not left to the implementer."
     adr:
       - "Must reference Scenario NFRs in ## Rationale section."
       - "Must list all rejected options with concrete reasons tied to TMA constraints."
@@ -48,7 +50,11 @@ description:
         Traces to: Scenario §9 Business Rule #2, BRD 2.0.158
     - >
       Before handoff: verify that ALL [BLOCKING] Open Questions from the Scenario §12
-      are resolved. If not — escalate to user before generating Tech Stack.
+      are resolved. If the stakeholder is unavailable or resolution is not possible,
+      DOCUMENT a default/fallback assumption in Tech Stack § Developer Notes with this format:
+        Q[N] fallback: [what the implementer should do]. Override when stakeholder confirms.
+      This allows implementation to proceed without blocking on unresolvable questions.
+      The fallback MUST be explicitly flagged as an assumption, not a decision.
 
   constraints:
     - Must strictly follow the ADR template from `adr-document`.
@@ -69,14 +75,17 @@ description:
     - "Have I specified a one-file-per-component rule in the ## File Structure section?"
     - "Does every implementation step have a 'Traces to:' reference to a Scenario § or BRD Rule?"
     - "Are there unresolved [BLOCKING] Open Questions in the Scenario that must be answered first?"
+    - "Have I added src/services/[ScreenName]MockData.ts to the ## File Structure section?"
+    - "For every TanStack Query: did I specify BOTH staleTime AND gcTime in § Developer Notes?"
+    - "For each [BLOCKING] question: is there a documented fallback in § Developer Notes?"
 
   output_format_requirements:
     tech_stack_required_sections:
       - "## Overview"
       - "## Figma Designs"
       - "## Core Stack"
-      - "## File Structure"  # NEW: mandatory — maps every component to its file path
+      - "## File Structure"  # mandatory — maps every component to its file path; includes MockData.ts
       - "## Step-by-Step Implementation"  # Each step must have 'Traces to:' field
       - "## TypeScript Interfaces"  # Values annotated with Scenario source
       - "## External Dependencies"
-      - "## Developer Notes"
+      - "## Developer Notes"  # Must include: staleTime + gcTime for all queries; BLOCKING fallback assumptions

@@ -41,6 +41,16 @@ description:
       For every Open Question in §12: classify as [BLOCKING] (stops implementation) or
       [NON-BLOCKING] (can be deferred without blocking code). Blocking questions must be
       resolved before the scenario is handed off to the Architect.
+    - >
+      For EACH named UI element in §7 UI Elements: append the Figma node ID in brackets.
+      Format: "StatCard — EarnedCard [figma: 73:52934]"
+      This allows the Tech Stack and Implementer to reference exact Figma nodes
+      without re-parsing the design. Node IDs survive Figma renames.
+    - >
+      For screens with paginated lists: §8 Screen States MUST explicitly distinguish:
+      a) "empty-ever" state: user has never had data (e.g., no history at all)
+      b) "empty-page" state: first page returns 0 items despite data existing elsewhere
+      Describe the visual behavior of each separately. If they share the same UI — state so explicitly.
 
   constraints:
     - "Cannot write code or implementation artifacts."
@@ -62,6 +72,8 @@ description:
     - "For each Filter/Tab/Segmented element: what are the EXACT programmatic string values? What is the default?"
     - "Are ALL BRD status values (including edge-case: checking, dispute, etc.) represented in §7 UI Elements?"
     - "Which Open Questions in §12 would BLOCK an implementer from writing code? Tag them [BLOCKING]."
+    - "Does every named UI element in §7 have a Figma node ID? Did I look them up in Figma Dev Mode?"
+    - "If this screen has a paginated list: did I describe both empty-ever AND empty-first-page states in §8?"
 
   handover_checklist:
     description: "Must be verified before handing scenario to Software_Architect_TMA"
@@ -72,3 +84,5 @@ description:
       - "API contracts in §10 include exact request/response field names and types."
       - "Business Rules in §9 reference exact BRD rule IDs (e.g., BRD 2.0.150)."
       - "All Screen States in §8 have a defined visual behavior description."
+      - "Every named UI element in §7 has a Figma node ID appended [figma: XX:XXXXX]."
+      - "For paginated screens: §8 explicitly describes both empty-ever and empty-first-page states."
