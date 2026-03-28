@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_TMA_IMPLEMENT",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Implement the 'W1_My_Tasks' screen using the provided ADR and Tech Stack. Start by initializing the log.",
+      "expected_output": "The agent should call scripts/init_log.py and create implemented/IMPLEMENTED_SCREEN_W1_My_Tasks.md"
+    },
+    {
+      "id": 2,
+      "prompt": "Document the implementation of a new storage service with a sequence diagram.",
+      "expected_output": "The agent should update the implementation log with a Mermaid sequence diagram showing service interactions."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "skill_name": "SKILL_BRD_PARSE",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Here is the BRD: 'FR-001 (Must): User must log in with email+password. BR-001: Password min 8 chars. API-001: POST /auth/login → {token}. NFR-001: Login must complete in <2s.' Figma screens: SCREEN_Login, SCREEN_Dashboard.",
+      "expected_output": "Agent produces brd_summary (total=4, mapped=4, unmapped=0) and screen_mappings with SCREEN_Login containing FR-001, BR-001, API-001, NFR-001. All 'Must' requirements are mapped. Optionally saves to references/brd_mapping.yaml."
+    },
+    {
+      "id": 2,
+      "prompt": "BRD has 'FR-015 (Must): System must generate monthly PDF reports.' Figma has only SCREEN_Login and SCREEN_Dashboard. No report screen.",
+      "expected_output": "Agent maps FR-015 to UNMAPPED list with reason 'No corresponding screen found in Figma design'. Validation warns that a Must requirement is unmapped. This unmapped requirement is flagged for section 12 of any related SA doc."
+    },
+    {
+      "id": 3,
+      "prompt": "The BRD is unstructured plain text without FR/BR/NFR labels. Parse it anyway.",
+      "expected_output": "Agent reads the text and applies the requirements taxonomy to classify each statement. Assigns IDs (FR-001, BR-001, etc.). Marks all requirements with source: 'Inferred from unstructured BRD'. Flags all inferred priorities as 'Should' unless the text contains 'must'/'shall'."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+rule:
+  name: analyze_command_triggers_system_analyst
+  description: >
+    Whenever the user sends a message in the format "Analyze [url]",
+    the system must automatically invoke the system_analyst role
+    to perform a product-technical analysis.
+
+  trigger:
+    type: message_pattern
+    pattern: "^Analyze\\s+https?://.+"
+
+  actions:
+    - type: load_role
+      path: .agents/roles/system_analyst.yaml
+
+    - type: set_context
+      context:
+        platform: telegram_mini_app
+        constraints:
+          ui_environment: webview
+          navigation_model: single_surface
+          input_method: touch
+          auth_flow: telegram_user
+          performance_priority: high
+          offline_capability: limited
+
+    - type: execute_analysis
+      mode: product_technical_analysis
+      inputs:
+        source: figma_url
+        url: "{{extracted_url}}"
+
+    - type: include_context
+      paths:
+        - /Users/pavlyshyn/AI/ai-wt(27032026)/ba
+
+  output:
+    format: short_summary
+    description: >
+      A concise summary of the system_analyst result, describing what was analyzed,
+      key findings, and the main technical/product insights in a compact form.

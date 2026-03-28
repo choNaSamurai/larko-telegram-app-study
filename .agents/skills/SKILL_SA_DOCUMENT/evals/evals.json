@@ -1,0 +1,20 @@
+{
+  "skill_name": "SKILL_SA_DOCUMENT",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have parsed the LoginScreen from Figma and BRD. Write the SA document for LoginScreen. Actors: Guest User, Auth Service. Main flow: enter email, enter password, tap Login, system calls POST /auth/login, on 200 redirect to Dashboard. BR: password min 8 chars, one uppercase, one digit. Error: 401 → inline message, 3 failed attempts → account lock.",
+      "expected_output": "File scenario/SCREEN_Login.md created with all 13 sections populated. Section 4 shows 5+ numbered steps. Section 6 lists at least: wrong password 1-2x, 3rd attempt, empty fields, network error. Section 9 has the password business rule. Section 10 has POST /auth/login with 200 and 401 responses."
+    },
+    {
+      "id": 2,
+      "prompt": "The SA doc for SCREEN_Dashboard is written. Now suggest improvements.",
+      "expected_output": "Agent lists potential improvements (UX gaps, missing edge cases) as a numbered list in the conversation. Does NOT modify scenario/SCREEN_Dashboard.md until user says 'approved' or 'apply improvements'. Section 13 stays empty."
+    },
+    {
+      "id": 3,
+      "prompt": "Approved. Apply the improvements to SCREEN_Dashboard.",
+      "expected_output": "Agent appends the approved improvements to section 13 of scenario/SCREEN_Dashboard.md only. No other sections modified."
+    }
+  ]
+}

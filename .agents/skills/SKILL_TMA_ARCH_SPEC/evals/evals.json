@@ -1,0 +1,15 @@
+{
+  "skill_name": "SKILL_TMA_ARCH_SPEC",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Analyze the 'My Tasks' screen scenario and generate an ADR for state management.",
+      "expected_output": "A valid ADR document choosing a state management library (e.g. TanStack Query) with clear rationale for why it's suitable for a Telegram Mini App."
+    },
+    {
+      "id": 2,
+      "prompt": "Create a step-by-step tech stack for a new 'Shift Details' modal.",
+      "expected_output": "A markdown document listing the stack and a logic-driven implementation plan that a developer can follow step-by-step."
+    }
+  ]
+}

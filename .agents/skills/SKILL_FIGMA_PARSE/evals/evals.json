@@ -1,0 +1,20 @@
+{
+  "skill_name": "SKILL_FIGMA_PARSE",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Parse this Figma link: https://figma.com/design/ABC123/MyApp?node-id=10-20. Extract all screens and their UI elements.",
+      "expected_output": "Agent calls get_metadata with nodeId=10:20, then calls get_design_context for each top-level frame found. Produces a ParsedFigmaScreen YAML record per screen with: screen_name (SCREEN_ prefix), node_id, ui_elements (non-empty list with type and label/id for each element), flows (if navigation arrows present), and saves screenshot to assets/screenshots/SCREEN_[NAME].png."
+    },
+    {
+      "id": 2,
+      "prompt": "Parse only the LoginScreen node from Figma (node id: 42:7). I need all button states and text field variants.",
+      "expected_output": "Agent calls get_design_context with nodeId=42:7 and artifactType=WEB_PAGE_OR_APP_SCREEN. Returns ParsedFigmaScreen with ui_elements listing every button and text field, each with a 'states' array (e.g. ['default', 'pressed', 'disabled', 'error']). Annotation-missing elements flagged with notes: ANNOTATION MISSING."
+    },
+    {
+      "id": 3,
+      "prompt": "I gave you a Figma URL with no node-id. Discover all screens.",
+      "expected_output": "Agent calls get_metadata on the page root, identifies all top-level Frame nodes as screens, lists them by name with their node IDs, and asks user which to parse first OR proceeds to parse all if user said so."
+    }
+  ]
+}
