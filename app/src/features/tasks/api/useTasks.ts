@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FilterGroup, Task } from '../types';
+import type { FilterGroup, Task } from '../types';
 import { getMockTasks } from '../services/TasksMockData';
 import { useCompanyStore } from '../../../store/useCompanyStore';
 

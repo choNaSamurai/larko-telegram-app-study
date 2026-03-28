@@ -3,7 +3,7 @@ import { Box, Calendar, User, ShoppingBag } from 'lucide-react';
 import { format, isTomorrow, isBefore, startOfDay } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Task } from '../types';
+import type { Task } from '../types';
 import { StatusBadge } from './StatusBadge';
 
 function cn(...inputs: ClassValue[]) {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutList, Search, RefreshCcw } from 'lucide-react';
-import { useCompanyStore } from '../../store/useCompanyStore';
+import { LayoutList, Search, RefreshCcw, User } from 'lucide-react';
+import { useCompanyStore } from '../../../store/useCompanyStore';
 import { useTasks } from '../api/useTasks';
-import { FilterGroup, Task } from '../types';
+import type { FilterGroup, Task } from '../types';
 import { TaskCard } from './TaskCard';
 import { TaskFilter } from './TaskFilter';
 import { CompanySwitcher } from '../../../components/layout/CompanySwitcher';

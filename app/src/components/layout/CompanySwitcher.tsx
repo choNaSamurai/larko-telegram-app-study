@@ -13,7 +13,7 @@ function cn(...inputs: ClassValue[]) {
  * Traces to Scenario §7, Figma [90:8503].
  */
 export const CompanySwitcher: React.FC<{ className?: string }> = ({ className }) => {
-  const { activeCompanyId, companies, setActiveCompany } = useCompanyStore();
+  const { activeCompanyId, companies } = useCompanyStore();
   const activeCompany = companies.find((c) => c.id === activeCompanyId);
 
   return (

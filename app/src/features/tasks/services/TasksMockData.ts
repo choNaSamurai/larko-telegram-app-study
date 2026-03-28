@@ -1,4 +1,4 @@
-import { Task } from '../types';
+import type { Task } from '../types';
 
 /**
  * Mock data for development and testing.

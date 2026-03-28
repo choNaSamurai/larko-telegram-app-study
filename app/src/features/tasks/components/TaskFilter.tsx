@@ -1,7 +1,7 @@
 import React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { FilterGroup } from '../types';
+import type { FilterGroup } from '../types';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
