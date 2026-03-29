@@ -23,6 +23,10 @@ module.exports = {
         'status-error':   '#f87171',  // Overdue — border-left + badge + deadline
         'status-success': '#34d399',  // Done
         'status-pending': '#fdba74',  // Dispute
+
+        // ── W3 Balance-specific ───────────────────────────────────────────────
+        'status-negative': '#ef4444', // Negative Remaining amount (OQ-W3-05 confirmed)
+        'advances':        '#60a5fa', // Advances stat + advance history rows
       },
       borderRadius: {
         'card':  '20px',    // Task card

@@ -1,5 +1,6 @@
 // src/components/screens/MyTasks/MyTasksScreen.tsx
 // Traces to: Scenario §4 Main Flow, §8 Screen States, ADR-001-A/B
+import type { BottomNavTab } from '@/components/BottomNav';
 // CONSTRAINT: Screen root must contain deriveScreenState() — never inline in JSX
 
 import { useMemo } from 'react';
@@ -50,7 +51,11 @@ function filterTasks(tasks: Task[], filter: FilterTab): Task[] {
   }
 }
 
-export function MyTasksScreen() {
+interface MyTasksScreenProps {
+  onTabChange?: (tab: BottomNavTab) => void;
+}
+
+export function MyTasksScreen({ onTabChange }: MyTasksScreenProps) {
   const { activeFilter } = useTaskFilterStore();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -109,7 +114,7 @@ export function MyTasksScreen() {
       )}
 
       {/* Bottom nav — always visible, Tasks tab active */}
-      <BottomNav activeTab="tasks" />
+      <BottomNav activeTab="tasks" onTabChange={onTabChange} />
     </div>
   );
 }

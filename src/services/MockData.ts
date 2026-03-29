@@ -1,6 +1,8 @@
 // src/services/MockData.ts
-// Traces to: Tech Stack §MockData.ts, ADR-001-C
+// Traces to: Tech Stack §MockData.ts, ADR-001-C, ADR-002
 // CONSTRAINT: Mock data lives ONLY here — never in components or hooks
+
+import type { BalanceData } from '@/types/balance.types';
 
 import type { Task } from '@/types/task.types';
 
@@ -120,3 +122,45 @@ export const MOCK_TASKS: Task[] = [
     hasActionButtons: false,
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// W3 Balance Mock Data
+// Traces to: Tech Stack §MockData.ts (balance section), Scenario §8 States S2/S3/S4
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** S2 — Default positive state */
+export const MOCK_BALANCE_DEFAULT: BalanceData = {
+  earned: 18450,
+  advances: 5000,
+  remaining: 13450,
+  periodLabel: 'Березень 2026',
+  history: [
+    { id: 'h1', type: 'earned',   name: 'Сонячна Станція №4',         date: '23 бер', hours: '9.0 год',       amount:  4050, currency: '₴' },
+    { id: 'h2', type: 'advance',  name: 'Аванс',                      date: '22 бер',                         amount: -5000, currency: '₴' },
+    { id: 'h3', type: 'earned',   name: 'Ремонт електропроводки',     date: '21 бер', hours: '8.0 год',       amount:  3200, currency: '₴' },
+    { id: 'h4', type: 'overtime', name: 'Овертайм · Станція №3',      date: '20 бер', hours: '2.5 год × 1.5', amount:  1688, currency: '₴' },
+    { id: 'h5', type: 'earned',   name: 'Аудит лічильників',          date: '19 бер', hours: '8.0 год',       amount:  3600, currency: '₴' },
+  ],
+};
+
+/** S3 — Negative balance state (advances > earned, BR-W3-03/BR-W3-04) */
+export const MOCK_BALANCE_NEGATIVE: BalanceData = {
+  earned: 3200,
+  advances: 8000,
+  remaining: -4800,
+  periodLabel: 'Березень 2026',
+  history: [
+    { id: 'n1', type: 'advance', name: 'Аванс',                  date: '22 бер',                   amount: -5000, currency: '₴' },
+    { id: 'n2', type: 'advance', name: 'Аванс',                  date: '18 бер',                   amount: -3000, currency: '₴' },
+    { id: 'n3', type: 'earned',  name: 'Ремонт електропроводки', date: '17 бер', hours: '8.0 год', amount:  3200, currency: '₴' },
+  ],
+};
+
+/** S4 — Empty state (no earnings yet, BR-W3-10) */
+export const MOCK_BALANCE_EMPTY: BalanceData = {
+  earned: 0,
+  advances: 0,
+  remaining: 0,
+  periodLabel: 'Березень 2026',
+  history: [],
+};

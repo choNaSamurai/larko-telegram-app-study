@@ -226,13 +226,18 @@ This screen is the first tab in the Worker's bottom navigation bar (`Tasks` · `
 
 | ID | Question | Priority | Status |
 |----|----------|----------|--------|
-| Q1 | `[NON-BLOCKING]` Does "tomorrow" deadline trigger a yellow/orange highlight, or only overdue (past) turns red? Figma only shows overdue-red. | NON-BLOCKING | Open |
-| Q2 | `[NON-BLOCKING]` Is there a "pull-to-refresh" gesture, or only the `[Оновити]` button for manual refresh? | NON-BLOCKING | Open |
-| Q3 | `[NON-BLOCKING]` What is the exact API endpoint name and full query parameters for fetching worker tasks? | NON-BLOCKING | IT to define |
-| Q4 | `[NON-BLOCKING]` Does the `solar:route-bold` icon tap open a Telegram native map, external Google Maps, or in-app map? | NON-BLOCKING | Open |
-| Q5 | `[NON-BLOCKING]` Are filter tab counts (e.g. "Нові (2)") real-time from the API or calculated client-side? | NON-BLOCKING | Open |
-| Q6 | `[NON-BLOCKING]` In the Figma "W1-loading-dark/light" frames, does the filter tab row (`div.px-4` skeleton) appear or not during loading? It appears in the loading frame but as skeletons — should real filter tabs appear only after data loads? | NON-BLOCKING | Open |
-
+| Q1 | `[NON-BLOCKING]` Does "tomorrow" deadline trigger a yellow/orange highlight, or only overdue (past) turns red? Figma only shows overdue-red. | NON-BLOCKING | Answered |
+Answer: "tommorow" deadline trigger a yellow/orange highlight
+| Q2 | `[NON-BLOCKING]` Is there a "pull-to-refresh" gesture, or only the `[Оновити]` button for manual refresh? | NON-BLOCKING | Answered |
+Answer: only the `[Оновити]` button for manual refresh
+| Q3 | `[NON-BLOCKING]` What is the exact API endpoint name and full query parameters for fetching worker tasks? | NON-BLOCKING | Answered |
+Answer: Need to make a mock, for later replacement with an API endpoint
+| Q4 | `[NON-BLOCKING]` Does the `solar:route-bold` icon tap open a Telegram native map, external Google Maps, or in-app map? | NON-BLOCKING | Answered |
+Answer: External Google Maps
+| Q5 | `[NON-BLOCKING]` Are filter tab counts (e.g. "Нові (2)") real-time from the API or calculated client-side? | NON-BLOCKING | Answered |
+Answer: Calculated client-side
+| Q6 | `[NON-BLOCKING]` In the Figma "W1-loading-dark/light" frames, does the filter tab row (`div.px-4` skeleton) appear or not during loading? It appears in the loading frame but as skeletons — should real filter tabs appear only after data loads? | NON-BLOCKING | Answered |
+Answer: Real filter tabs appear only after data loads
 ---
 
 ## 12.1 Design-to-Code Specifics (MANDATORY — feed into Tech Stack)

@@ -57,3 +57,41 @@ export function formatDeadline(isoDate: string): {
     isTomorrow: diffDays === 1, // Q1: tomorrow deadline → yellow warning color
   };
 }
+
+/**
+ * Format SIGNED balance history amount.
+ * Earned/Overtime → "+₴4,050" (green text)
+ * Advance         → "−₴5,000" (blue text, Unicode minus U+2212)
+ * Zero            → "₴0"
+ *
+ * CRITICAL: Use Unicode minus U+2212 (−), NOT ASCII hyphen (-).
+ * Traces to: Scenario §12.1 Price/Number Formats, Tech Stack §Utility Functions
+ */
+export function formatSignedMoney(amount: number, currency = '₴'): string {
+  const abs = Math.abs(Math.floor(amount))
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (amount > 0) return `+${currency}${abs}`;
+  if (amount < 0) return `\u2212${currency}${abs}`; // U+2212 true minus sign
+  return `${currency}0`;
+}
+
+/**
+ * Format period label for balance header subtitle.
+ * The API provides a periodLabel; this is a fallback for loading/uninitialized.
+ * Traces to: Scenario §12.1, §1 Screen Overview
+ */
+export function formatPeriodLabel(
+  period: 'week' | 'month' | 'all',
+  apiLabel?: string,
+): string {
+  if (apiLabel) return apiLabel;
+  const now = new Date();
+  const monthName = now.toLocaleString('uk', { month: 'long', year: 'numeric' });
+  const map: Record<string, string> = {
+    week:  'Поточний тиждень',
+    month: monthName,
+    all:   'Весь час',
+  };
+  return map[period] ?? 'Березень 2026';
+}
