@@ -53,9 +53,10 @@ function filterTasks(tasks: Task[], filter: FilterTab): Task[] {
 
 interface MyTasksScreenProps {
   onTabChange?: (tab: BottomNavTab) => void;
+  onTaskSelect?: (taskId: string) => void;
 }
 
-export function MyTasksScreen({ onTabChange }: MyTasksScreenProps) {
+export function MyTasksScreen({ onTabChange, onTaskSelect }: MyTasksScreenProps) {
   const { activeFilter } = useTaskFilterStore();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -106,7 +107,7 @@ export function MyTasksScreen({ onTabChange }: MyTasksScreenProps) {
             // Cards feed: p-4 (16px), gap-3 (12px) — Scenario §12.1 Spacing
             <div className="flex flex-col gap-3 px-4 pb-4 overflow-auto flex-1 min-h-0 hide-scrollbar">
               {filteredTasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
+                <TaskCard key={task.id} task={task} onPress={onTaskSelect ? () => onTaskSelect(task.id) : undefined} />
               ))}
             </div>
           )}

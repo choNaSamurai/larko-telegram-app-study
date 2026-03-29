@@ -28,9 +28,10 @@ function openMaps(address: string) {
 
 interface TaskCardProps {
   task: Task;
+  onPress?: () => void;
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onPress }: TaskCardProps) {
   const { label: deadlineLabel, isOverdue, isTomorrow } = formatDeadline(task.deadline);
 
   const deadlineColorClass = isOverdue
@@ -45,7 +46,9 @@ export function TaskCard({ task }: TaskCardProps) {
       style={{
         // CARD BORDER RULE: left-only. Traces to: Scenario §12.1 Card border style
         borderLeft: `2px solid ${STATUS_BORDER_COLOR[task.status]}`,
+        cursor: onPress ? 'pointer' : 'default',
       }}
+      onClick={onPress}
     >
       {/* Card background */}
       <div className="absolute inset-0 bg-bg-card rounded-card" />

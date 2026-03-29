@@ -95,3 +95,27 @@ export function formatPeriodLabel(
   };
   return map[period] ?? 'Березень 2026';
 }
+
+/**
+ * Format hours for Order Hub time tracking: 5 → "5.0 год"
+ * Traces to: SCREEN_Order_Hub scenario §12.1 Price/Number Formats
+ */
+export function formatHours(hours: number): string {
+  return `${hours.toFixed(1)} год`;
+}
+
+/**
+ * Format dispute creation timestamp: "2026-03-24T09:15:00Z" → "24 бер, 09:15"
+ * Traces to: SCREEN_Order_Hub scenario §7 (dispute_banner meta text)
+ */
+export function formatDisputeDate(isoString: string): string {
+  const date = new Date(isoString);
+  const months = [
+    'січ', 'лют', 'бер', 'квіт', 'трав', 'чер',
+    'лип', 'серп', 'вер', 'жовт', 'лист', 'груд',
+  ] as const;
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${date.getDate()} ${months[date.getMonth()]}, ${hh}:${mm}`;
+}
+

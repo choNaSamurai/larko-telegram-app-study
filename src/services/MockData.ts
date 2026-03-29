@@ -5,6 +5,7 @@
 import type { BalanceData } from '@/types/balance.types';
 import type { Task } from '@/types/task.types';
 import type { UserProfile, LeaveType, LeaveRequest } from '@/types/leave.types';
+import type { OrderDetail } from '@/types/order.types';
 
 // Tomorrow's ISO date for deadline highlight testing (Q1 answer)
 const tomorrow = new Date();
@@ -208,3 +209,154 @@ export const MOCK_LEAVE_REQUESTS: LeaveRequest[] = [
     status: 'approved',
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// W2 Order Hub Mock Data — 6 status states
+// Traces to: TECH_STACK_SCREEN_Order_Hub §MockData.ts, Scenario §8
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ORDER_BASE: Omit<OrderDetail, 'id' | 'status' | 'canAddTime' | 'canAddPhotos' | 'canReportIssue' | 'ctaAction' | 'timeLogs' | 'totalHours' | 'photos' | 'photosAddedToday' | 'dispute'> = {
+  number: '000445',
+  name: 'Встановлення сонячної станція №4',
+  deadline: '2026-03-20',
+  amount: 12400,
+  notes: 'Потрібно встановити станцію.\nЗнайдеш охоронця при вході взяти ключі. Вхід з центральних воріт.\nКлючі в охоронця при вході. вхід з центральних воріт.',
+  location: {
+    address: 'Київ, вул. Будівельна 12',
+    lat: 50.4501,
+    lng: 30.5234,
+  },
+};
+
+const MOCK_PHOTOS = [
+  {
+    id: 'p1',
+    url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=80&h=80&fit=crop',
+    uploadedAt: '2026-03-24',
+    workerName: 'Worker',
+  },
+  {
+    id: 'p2',
+    url: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=80&h=80&fit=crop',
+    uploadedAt: '2026-03-24',
+    workerName: 'Worker',
+  },
+];
+
+const MOCK_TIME_LOGS = [
+  {
+    id: 'tl-1',
+    date: '2026-03-24',
+    netHours: 5.0,
+    workStart: '08:00',
+    workEnd: '13:30',
+    breaks: [{ start: '10:00', end: '10:30' }],
+    isOvertime: false,
+    isReadOnly: true,
+  },
+];
+
+export const MOCK_ORDER_NEW: OrderDetail = {
+  ...ORDER_BASE,
+  id: 'task-1', // matches MOCK_TASKS id so order can be opened from W1
+  status: 'new',
+  timeLogs: [],
+  totalHours: 0,
+  photos: [],
+  photosAddedToday: 0,
+  canAddTime: true,
+  canAddPhotos: true,
+  canReportIssue: true,
+  ctaAction: 'start',
+};
+
+export const MOCK_ORDER_IN_PROGRESS: OrderDetail = {
+  ...ORDER_BASE,
+  id: 'task-2',
+  status: 'in_progress',
+  timeLogs: MOCK_TIME_LOGS,
+  totalHours: 5.0,
+  photos: MOCK_PHOTOS,
+  photosAddedToday: 2,
+  canAddTime: true,
+  canAddPhotos: true,
+  canReportIssue: true,
+  ctaAction: 'complete',
+};
+
+export const MOCK_ORDER_OVERDUE: OrderDetail = {
+  ...ORDER_BASE,
+  id: 'task-3',
+  status: 'overdue',
+  timeLogs: MOCK_TIME_LOGS,
+  totalHours: 5.0,
+  photos: MOCK_PHOTOS,
+  photosAddedToday: 2,
+  canAddTime: true,
+  canAddPhotos: true,
+  canReportIssue: true,
+  ctaAction: 'complete',
+};
+
+export const MOCK_ORDER_CHECKING: OrderDetail = {
+  ...ORDER_BASE,
+  id: 'task-4',
+  status: 'checking',
+  timeLogs: MOCK_TIME_LOGS,
+  totalHours: 5.0,
+  photos: MOCK_PHOTOS,
+  photosAddedToday: 2,
+  canAddTime: false,
+  canAddPhotos: false,
+  canReportIssue: false,
+  ctaAction: null,
+};
+
+export const MOCK_ORDER_DONE: OrderDetail = {
+  ...ORDER_BASE,
+  id: 'order-done',
+  status: 'done',
+  timeLogs: MOCK_TIME_LOGS,
+  totalHours: 5.0,
+  photos: MOCK_PHOTOS,
+  photosAddedToday: 0,
+  canAddTime: false,
+  canAddPhotos: false,
+  canReportIssue: false,
+  ctaAction: null,
+};
+
+export const MOCK_ORDER_DISPUTE: OrderDetail = {
+  ...ORDER_BASE,
+  id: 'task-5',
+  status: 'dispute',
+  timeLogs: MOCK_TIME_LOGS,
+  totalHours: 5.0,
+  photos: MOCK_PHOTOS,
+  photosAddedToday: 0,
+  dispute: {
+    id: 'dispute-1',
+    managerName: 'Іван С.',
+    description:
+      'Іван С. вважає, що фактичний час роботи менший від вказаного. Перерва повинна бути 60 хв замість 30 хв.',
+    createdAt: '2026-03-24T09:15:00Z',
+    status: 'pending',
+  },
+  canAddTime: false,
+  canAddPhotos: true,
+  canReportIssue: true,
+  ctaAction: null,
+};
+
+// Map by task id for service lookup
+export const MOCK_ORDER_MAP: Record<string, OrderDetail> = {
+  'task-1': MOCK_ORDER_NEW,
+  'task-2': MOCK_ORDER_IN_PROGRESS,
+  'task-3': MOCK_ORDER_OVERDUE,
+  'task-4': MOCK_ORDER_CHECKING,
+  'task-5': MOCK_ORDER_DISPUTE,
+  'task-6': MOCK_ORDER_NEW, // same as new for extra card
+  'order-done': MOCK_ORDER_DONE,
+};
