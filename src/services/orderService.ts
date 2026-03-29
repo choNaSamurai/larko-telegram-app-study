@@ -8,6 +8,10 @@ import { MOCK_ORDER_MAP, MOCK_ORDER_IN_PROGRESS } from './MockData';
 const SIMULATED_DELAY_MS = 600;
 const delay = () => new Promise((r) => setTimeout(r, SIMULATED_DELAY_MS));
 
+// In-memory state store — persists mutations within current browser session
+// Real API won't need this; it's purely a dev-time convenience.
+const _stateOverrides: Map<string, Partial<OrderDetail>> = new Map();
+
 /**
  * Fetches full order details for the Order Hub.
  * TODO: Replace with:
@@ -15,7 +19,9 @@ const delay = () => new Promise((r) => setTimeout(r, SIMULATED_DELAY_MS));
  */
 export async function fetchOrderById(id: string): Promise<OrderDetail> {
   await delay();
-  return MOCK_ORDER_MAP[id] ?? MOCK_ORDER_IN_PROGRESS; // fallback for unknown IDs
+  const base = MOCK_ORDER_MAP[id] ?? MOCK_ORDER_IN_PROGRESS;
+  const overrides = _stateOverrides.get(id);
+  return overrides ? { ...base, ...overrides } : base;
 }
 
 /**
@@ -23,11 +29,32 @@ export async function fetchOrderById(id: string): Promise<OrderDetail> {
  * TODO: Replace with: PATCH /api/v1/orders/{id}/status
  */
 export async function updateOrderStatus(
-  _id: string,
+  id: string,
   action: 'start' | 'complete',
 ): Promise<{ status: string }> {
   await delay();
-  return { status: action === 'start' ? 'in_progress' : 'checking' };
+  const newStatus = action === 'start' ? 'in_progress' : 'checking';
+  // Persist in-memory so re-fetch returns updated state
+  const existing = _stateOverrides.get(id) ?? {};
+  _stateOverrides.set(id, {
+    ...existing,
+    status: newStatus as OrderDetail['status'],
+    // Update derived flags for in_progress
+    ...(newStatus === 'in_progress' && {
+      canAddTime: true,
+      canAddPhotos: true,
+      canReportIssue: true,
+      ctaAction: 'complete',
+    }),
+    // Update derived flags for checking
+    ...(newStatus === 'checking' && {
+      canAddTime: false,
+      canAddPhotos: false,
+      canReportIssue: false,
+      ctaAction: null,
+    }),
+  });
+  return { status: newStatus };
 }
 
 /**
@@ -59,10 +86,16 @@ export async function deleteOrderPhoto(
  * TODO: Replace with: POST /api/v1/orders/{id}/dispute/response
  */
 export async function submitDisputeResponse(
-  _orderId: string,
+  id: string,
   payload: DisputeResponsePayload,
 ): Promise<void> {
   await delay();
-  // In mock — just log. Real API would update dispute status.
+  // Persist resolved dispute state in-memory
+  const existing = _stateOverrides.get(id) ?? {};
+  _stateOverrides.set(id, {
+    ...existing,
+    status: payload.action === 'accept' ? 'done' : 'dispute',
+    ctaAction: null,
+  });
   console.log('[Mock] Dispute response submitted:', payload);
 }
