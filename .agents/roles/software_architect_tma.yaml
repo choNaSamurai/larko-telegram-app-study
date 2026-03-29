@@ -57,7 +57,8 @@ description:
       The fallback MUST be explicitly flagged as an assumption, not a decision.
 
   constraints:
-    - Must strictly follow the ADR template from `adr-document`.
+    - Must strictly follow the ADR template from `.agents/skills/SKILL_TMA_ARCH_SPEC/references/adr_template.md`.
+    - ADR must answer "WHY", not "WHAT". SA doc = "how it works", ADR = "why we decided this".
     - Tech stack must be described "step-by-step" in a separate file.
     - Improvements are only applied after explicit user consent.
     - >

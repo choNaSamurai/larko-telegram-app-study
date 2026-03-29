@@ -53,6 +53,17 @@ Input: nodeId = <screen node id>
 Output: reference code, screenshot, component specs, spacing, colors, typography
 ```
 
+**📌 ICON EXTRACTION — MANDATORY during this step:**
+For every element that contains an SVG icon, find its `data-name` attribute in the output.
+Examples of what to look for in the generated code:
+```
+<div data-name="solar:route-bold" ...>
+<div data-name="mdi:company" ...>
+<div data-name="majesticons:note-text" ...>
+```
+The `data-name` value is the exact `@iconify/react` icon ID.
+Record each icon in the Icon Inventory table (see Step 6).
+
 ### Step 4 — Get screenshot for visual reference
 
 ```
@@ -85,6 +96,7 @@ ui_elements:
     states: ["default", "pressed", "disabled", "loading"]
     variants: []
     position: {x, y, w, h}
+    icon: "solar:route-bold"            # REQUIRED if element contains an icon — use Figma data-name
 flows:
   - from: "SCREEN_A"
     to: "SCREEN_B"
@@ -93,8 +105,98 @@ design_tokens:
   colors: {}
   typography: {}
   spacing: {}
+icon_inventory:                         # ← NEW: MANDATORY table of all icons on this screen
+  - figma_node_id: "192:6209"
+    data_name: "solar:route-bold"       # Exact value from data-name attribute
+    size: 24
+    color: "#ededed"
+    component_used_in: "TaskCard"
+  - figma_node_id: "192:6198"
+    data_name: "mdi:company"
+    size: 16
+    color: "#9d9d9d"
+    component_used_in: "TaskCard"
+  - figma_node_id: "111:8627"
+    data_name: "majesticons:note-text"
+    size: 20
+    color: "#9d9d9d"
+    component_used_in: "TaskCard"
 notes: ""                               # Any ambiguous or missing annotations
 ```
+
+**The `icon_inventory` section feeds directly into:**
+- Scenario `§ 7 UI Elements` — "Icon" column
+- Tech Stack — `@iconify/react` dependency and component usage patterns
+- TMA Implementer — `Figma Icon Extraction Check` verification gate
+
+### Step 7 — Extract CSS Design Tokens (MANDATORY output)
+
+From the `get_variable_defs` and `get_design_context` outputs, produce a structured **Design Tokens Table** for every screen. This table is the authoritative source for the implementer's CSS values.
+
+```yaml
+design_tokens_css:
+  # Colors — exact hex values from Figma variables/fills
+  colors:
+    - token: "--color-bg-screen"         # CSS var name (use kebab-case)
+      hex: "#0f0f1a"                     # Exact hex from Figma
+      usage: "Screen background"         # Where it's used
+    - token: "--color-bg-card"
+      hex: "#1a1a2e"
+      usage: "Task card, balance card background"
+    - token: "--color-text-primary"
+      hex: "#ffffff"
+      usage: "Primary text, card titles"
+    - token: "--color-text-secondary"
+      hex: "#9d9d9d"
+      usage: "Subtitle, meta text"
+    - token: "--color-border-status-active"
+      hex: "#60a5fa"
+      usage: "Active task card left border"
+
+  # Spacing — px values from Figma layout
+  spacing:
+    - element: "Screen horizontal padding"
+      value: "16px"
+    - element: "Card internal padding"
+      value: "12px 16px"
+    - element: "List item gap"
+      value: "8px"
+    - element: "Section gap"
+      value: "24px"
+
+  # Typography — exact values from Figma text styles
+  typography:
+    - role: "Card title"
+      font_family: "Inter"
+      font_size: "14px"
+      font_weight: "500"
+      line_height: "20px"
+      letter_spacing: "0px"
+    - role: "Meta / label text"
+      font_family: "Inter"
+      font_size: "12px"
+      font_weight: "400"
+      line_height: "16px"
+
+  # Border radius
+  border_radius:
+    - element: "Task card"
+      value: "12px"
+    - element: "Status badge"
+      value: "6px"
+    - element: "Avatar"
+      value: "50%"
+
+  # Shadows (if any)
+  shadows:
+    - element: "Card shadow"
+      value: "0px 4px 16px rgba(0, 0, 0, 0.25)"
+```
+
+> **This Design Tokens table MUST be:**
+> 1. Included verbatim in the `SKILL_SA_DOCUMENT` output under `§ 12.1`
+> 2. Referenced in the Tech Stack as the authoritative source for CSS values
+> 3. Used by the TMA Implementer's "Color Token Check" and "Spacing Fidelity Check" gates
 
 ---
 

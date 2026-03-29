@@ -61,6 +61,56 @@ description:
       Mock data for development must live in `src/services/[ScreenName]MockData.ts`.
       It is a constraint violation to co-locate mock data in a component, hook, or store file.
 
+    # ─── ICON RULE ────────────────────────────────────────────────────────────
+    - >
+      NEVER draw icons manually with inline SVG <path> elements.
+      ALWAYS use @iconify/react with the EXACT icon name from the Figma design.
+      How to identify the correct icon name:
+        1. Call get_design_context on the Figma node.
+        2. Read the `data-name` attribute on icon nodes: e.g., data-name="solar:route-bold".
+        3. The data-name value IS the @iconify icon ID — use it directly.
+      Required usage pattern:
+        import { Icon } from '@iconify/react';
+        <Icon icon="solar:route-bold" width={24} height={24} />
+        <Icon icon="mdi:company" width={16} color="#9d9d9d" />
+      If @iconify/react is not installed: npm install @iconify/react
+      This rule applies to ALL icons: navigation, card row icons, status icons, fab buttons.
+      ZERO exceptions. A manually drawn SVG is a constraint violation.
+
+    # ─── CARD BORDER RULE ─────────────────────────────────────────────────────
+    - >
+      Task/order card borders in Figma are LEFT-ONLY (border-l), NOT borders on all 4 sides.
+      Figma reference: "border-l border-solid border-l-[COLOR]".
+      Use: style={{ borderLeft: `2px solid ${COLOR}` }} — NOT border: on all sides.
+      Applying border to all 4 sides is a constraint violation.
+
+    # ─── PRICE FORMAT RULE ────────────────────────────────────────────────────
+    - >
+      NEVER use toLocaleString('uk-UA') for price/number formatting.
+      Ukrainian locale returns spaces as thousand separators (e.g. "12 400") — WRONG.
+      The Figma design uses comma separators: "₴12,400".
+      Required formatter:
+        function formatMoney(n: number): string {
+          return Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        // Usage: `₴${formatMoney(task.price)}`  →  "₴12,400"
+
+    # ─── TMA SAFE AREA RULE ───────────────────────────────────────────────────
+    - >
+      Every screen root component MUST apply Telegram Mini App safe area insets.
+      Hardcoding pt-4 or padding-top: 16px is WRONG — safe area varies per device/OS.
+      Required pattern for screen header:
+        <div style={{ paddingTop: 'env(safe-area-inset-top, 16px)' }}>
+      Or with Tailwind custom utility:
+        className="pt-[env(safe-area-inset-top,16px)]"
+
+    # ─── EXACT SPACING PIPELINE RULE (MANDATORY) ──────────────────────────────
+    - >
+      NEVER guess paddings, margins, or gaps, and NEVER use rough Tailwind approximations (like p-4 for 16px or gap-2 for 8px) if they deviate from the design.
+      BEFORE writing layout code for ANY component, you MUST call get_design_context on its Figma node.
+      Extract the exact CSS padding, margin, and gap values (e.g., pl-[17px], padding: '16px 17px', gap-[12px]).
+      If converting fixed widths to responsive Flexbox, you MUST preserve the exact inner paddings and gaps from Figma.
+
   verification_gates:
     - name: "Type Contract Check"
       when: "After defining any TypeScript interface, type, or enum"
@@ -104,6 +154,60 @@ description:
         If YES → confirm that App.tsx tab router already lists this screen.
         Do NOT create, copy, or render a bottom nav bar inside the screen component.
 
+    - name: "Figma Icon Extraction Check"
+      when: "Before implementing any component that contains icons"
+      check: >
+        1. Call get_design_context on the Figma node containing the icon.
+        2. Find the `data-name` attribute on icon wrapper divs (e.g., data-name="solar:route-bold").
+        3. Verify @iconify/react is installed (check package.json).
+        4. Use <Icon icon="[data-name value]" width={N} /> — EXACT name, no approximation.
+        5. Call get_screenshot on the same node and visually confirm the icon matches.
+        Result: PASS only if every icon in the component uses @iconify/react with the Figma data-name.
+        FAIL if any SVG is drawn manually with <path> elements.
+
+    - name: "Visual Fidelity Check"
+      when: "After implementing every major visual component (Card, Header, Badge, Form field, etc.)"
+      check: >
+        1. Call get_screenshot for the component's Figma node ID (from Scenario §7).
+        2. Open the dev server in browser and capture the rendered component.
+        3. Compare side-by-side:
+           a) Background colors match (use Figma hex values from §12.1 Color table).
+           b) Text colors, sizes, weights match.
+           c) Spacing (padding, gap, margin) matches Figma px values.
+           d) Border-radius values match.
+           e) Icons: correct identity, size, and color.
+           f) Card borders: left-only, correct width and color.
+        4. Log result in implemented/ as "Visual Fidelity — [ComponentName]": PASS or FAIL.
+        Result: PASS only when visual delta is within 5% of design intent.
+        FAIL → fix immediately before moving to the next component.
+
+    - name: "Color Token Check"
+      when: "Before implementing any component with background, text, or border colors"
+      check: >
+        1. Read color values from Scenario §12.1 Color table AND from get_variable_defs output.
+        2. Verify every color in the component is defined as a CSS variable or Tailwind config token.
+        3. NEVER use arbitrary hard-coded hex or Tailwind generic colors (e.g., blue-500) unless
+           explicitly confirmed to match Figma hex.
+        4. Confirm the component's CSS/Tailwind rule references the token, not a raw hex literal
+           (unless the project has no token system yet — then document the hex with source).
+        Result: PASS if all colors are traceable to Figma design token values.
+
+    - name: "Spacing Fidelity Check"
+      when: "After implementing layout of any screen section or card component"
+      check: >
+        1. Read padding and gap values from Scenario §12.1 Spacing table or from get_design_context output.
+        2. Confirm padding-top/bottom/left/right, column gap, row gap match Figma px values.
+        3. Confirm border-radius of each card/container matches Figma.
+        4. For list items: confirm the spacing between items matches Figma.
+        Result: PASS if layout measurements match within ±1px of Figma spec.
+
+    - name: "Number Format Check"
+      when: "Before implementing any component that displays prices or counts"
+      check: >
+        Verify price format matches Figma: ₴12,400 (comma thousand separator, no spaces).
+        Confirm formatMoney() uses regex replace, NOT toLocaleString('uk-UA').
+        Result: PASS if formatted output matches Figma exactly.
+
   thinking_process:
     - "Does my implementation match the Figma design exactly?"
     - "Am I following the Tech Stack and ADR constraints without deviation?"
@@ -115,3 +219,17 @@ description:
     - "Does my screen root use deriveScreenState() — or is screen state logic buried in JSX?"
     - "Is mock data in src/services/[Name]MockData.ts — NOT in a component or hook?"
     - "If this screen is a new tab — is it integrated in App.tsx, not in the page component?"
+    # ─── FROM W1 POST-MORTEM (MANDATORY) ────────────────────────────────
+    - "Did I call get_design_context on EVERY node containing icons to extract data-name attributes?"
+    - "Am I using @iconify/react for ALL icons — zero hand-drawn inline SVG paths?"
+    - "Does the card border use border-left ONLY (not all 4 sides)?"
+    - "Is the price formatted as ₴12,400 (comma) — NOT ₴12 400 (space)?"
+    - "Does the screen header use env(safe-area-inset-top) — NOT a hardcoded pt-4?"
+    # ─── VISUAL FIDELITY (MANDATORY per component) ────────────────────────
+    - "Did I call get_screenshot on EACH major component Figma node and compare with browser output?"
+    - "Do ALL background colors in my code match the Figma hex values from §12.1 Color table?"
+    - "Do ALL text colors, font sizes, and font weights match Figma spec exactly?"
+    - "Do padding, gap, and border-radius values match Figma px values (not approximated)?"
+    - "Is the Visual Fidelity Check gate PASS for every component I implemented?"
+    - "Did I log the visual diff result (PASS/FAIL + corrections) in implemented/ for every component?"
+

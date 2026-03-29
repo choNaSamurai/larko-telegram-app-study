@@ -36,6 +36,65 @@ Focus on **"HOW"** to implement. Reference [tech_stack_template.md](./assets/tec
 - **Component Inventory**: Specific libraries, versions, and integration points.
 - **Validation Criteria**: How to know if the implementation is correct.
 
+**MANDATORY sections to always include in Tech Stack:**
+
+#### External Dependencies (always list explicitly)
+| Package | Purpose | Usage |
+|---|---|---|
+| `@iconify/react` | Icon rendering — exact Figma icons via data-name | `<Icon icon="solar:route-bold" width={24} />` |
+| `@tanstack/react-query` | Data fetching + cache | `useQuery({ staleTime: 5min })` |
+| `zustand` | Client-side filter/UI state | `create<Store>(...)` |
+
+#### Design Tokens — CSS Custom Properties (MANDATORY section)
+
+Populate from `Scenario §12.1 Color Table`. Define in `src/styles/tokens.css` or `tailwind.config.js`:
+
+```css
+/* src/styles/tokens.css — generated from Scenario §12.1 */
+:root {
+  --color-bg-screen: #??????;      /* Screen root background */
+  --color-bg-card: #??????;        /* Card/container background */
+  --color-text-primary: #??????;   /* Primary text */
+  --color-text-secondary: #??????; /* Meta/label text */
+  --color-border-active: #??????;  /* Active status border */
+  --color-border-done: #??????;    /* Done status border */
+  /* ... all colors from §12.1 Color Table ... */
+}
+```
+
+> **If project uses Tailwind CSS**: extend `tailwind.config.js` with exact Figma hex values:
+> ```js
+> theme: {
+>   extend: {
+>     colors: {
+>       'bg-screen': '#??????',   // from Scenario §12.1
+>       'bg-card': '#??????',
+>       'text-primary': '#??????',
+>     },
+>     borderRadius: {
+>       'card': '??px',           // from Scenario §12.1 Border Radius Table
+>       'badge': '??px',
+>     },
+>     fontSize: {
+>       'card-title': ['??px', { lineHeight: '??px', fontWeight: '???' }],
+>     }
+>   }
+> }
+> ```
+> The implementer's "Color Token Check" gate validates that no raw hex appears outside this config.
+
+#### Utility Functions (always define in Tech Stack, not invented by implementer)
+```typescript
+// Price formatter — MUST match Figma comma format "₴12,400"
+export function formatMoney(n: number, currency = '₴'): string {
+  return `${currency}${Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+}
+
+// Card border — left-only (confirmed from Figma CSS output)
+export const STATUS_BORDER: Record<TaskStatus, string> = { ... };
+// Applied as: style={{ borderLeft: `2px solid ${STATUS_BORDER[status]}` }}
+```
+
 ---
 
 ## Execution Workflow (God-Level)
@@ -63,6 +122,10 @@ Focus on **"HOW"** to implement. Reference [tech_stack_template.md](./assets/tec
 - **TMA First**: Prioritize light-weight, fast-loading solutions.
 - **Actionable Steps**: Tech stack must be "step-by-step" so an Executor can follow it linearly.
 - **No Placeholders**: Every library or tool mentioned must be real and specific.
+- **@iconify/react is mandatory**: ALWAYS list it as a dependency. Implementers must use it for ALL icons.
+  Never allow icon shapes to be hand-drawn in SVG — the Figma `data-name` attribute provides the exact icon ID.
+- **formatMoney utility is mandatory**: ALWAYS define the comma-format price utility in Tech Stack.
+  Never let the implementer discover the format independently.
 
 ---
 

@@ -25,10 +25,6 @@ Describe the current state, technical environment, and constraints.
 - **TMA Constraints**: [e.g. Telegram WebApp, fast initial load, limited screen size]
 - **Team Size**: [e.g. small team, MVP phase]
 
-Example:
-> We are building a Telegram Mini App for field team management.
-> Constraints: Must work inside Telegram WebApp, fast initial load, scalable backend.
-
 ---
 
 ## Problem
@@ -37,33 +33,24 @@ What specific technical challenge are we solving for this screen?
 
 - "How to handle real-time updates?"
 - "Which state management strategy is best for X?"
-- "Monolith vs microservices for this service boundary?"
 
 ---
 
 ## Options Considered
 
 ### Option 1: [Name]
-- **Pros**:
-  - simpler
-  - faster development
-- **Cons**:
-  - harder to scale later
+- **Pros**: ...
+- **Cons**: ...
 
 ### Option 2: [Name]
-- **Pros**:
-  - scalable
-- **Cons**:
-  - complex setup
-  - slower MVP
+- **Pros**: ...
+- **Cons**: ...
 
 ---
 
 ## Decision
 
 Clear statement of the chosen path.
-
-> We choose [Option 1] because [concise reason].
 
 ---
 
@@ -73,31 +60,27 @@ Why this choice is better for the current MVP and TMA context.
 
 - MVP Speed — [explain]
 - Team Familiarity — [explain]
-- TMA Constraints — [explain why alternatives are overkill or infeasible]
+- TMA Constraints — [explain]
 
 ---
 
 ## Consequences
 
 **Positive:**
-- fast development
-- simpler debugging
+- ...
 
 **Negative:**
-- scaling limitations in future
-- possible refactor needed later
+- ...
 
 ---
 
 ## Future Considerations
 
-Scaling plan or revisit conditions.
-
-> If system grows beyond [threshold]: consider [alternative]. Introduce only if scaling requires it.
+> If system grows beyond [threshold]: consider [alternative].
 
 ---
 
-## Full Example (Reference)
+## Full Example
 
 ```markdown
 # ADR-001: Backend Architecture for Telegram Mini App
@@ -106,6 +89,7 @@ Status: ACCEPTED
 
 ## Context
 We are building a Telegram Mini App for shift management.
+Constraints: Must work inside Telegram WebApp, fast initial load.
 
 ## Problem
 We need to choose backend architecture.
@@ -129,33 +113,9 @@ We choose Monolith (NestJS).
 - Telegram Mini App constraints
 
 ## Consequences
-
-Positive:
-- faster delivery
-- simpler debugging
-
-Negative:
-- future scaling refactor required
+Positive: faster delivery, simpler debugging
+Negative: future scaling refactor required
 
 ## Future
 Introduce microservices only if scaling requires it.
-```
-
----
-
-## When to Create an ADR
-
-Create a new ADR when deciding:
-- Backend architecture choice
-- Auth strategy (Telegram / JWT / OAuth)
-- Database choice
-- State management (Zustand vs Context vs Redux)
-- Key library integrations
-- Major data-fetching patterns
-
-## Project ADR File Convention
-
-```
-/adr
-  ADR_SCREEN_[NAME].md    ← per screen or feature
 ```

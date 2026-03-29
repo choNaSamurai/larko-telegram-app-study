@@ -68,7 +68,7 @@ description: End-to-end feature development workflow — from Figma design to pr
 
 1. Прочитай роль: `.agents/roles/software_architect_tma.yaml`
 2. Для кожного сценарію: виконай `SKILL_TMA_ARCH_ADR` та `SKILL_TMA_ARCH_SPEC`
-3. Запиши `adr/ADR_SCREEN_[NAME].md` згідно з шаблоном з `adr-document`
+3. Запиши `adr/ADR_SCREEN_[NAME].md` згідно з шаблоном з `.agents/skills/SKILL_TMA_ARCH_SPEC/references/adr_template.md`
 4. Запиши `tech-stack/TECH_STACK_SCREEN_[NAME].md` з обов'язковими секціями:
    - `## File Structure`
    - `## Step-by-Step Implementation` (кожен крок з `Traces to:`)
@@ -116,8 +116,30 @@ description: End-to-end feature development workflow — from Figma design to pr
    - `TMA Compatibility Check`
    - `Log Completeness Check`
    - `Global Layout Check`
-4. Після КОЖНОГО атомарного кроку: оновлюй `implemented/IMPLEMENTED_SCREEN_[NAME].md`
-5. Пріоритет документів при конфлікті: **Tech Stack > ADR > Scenario > BRD**
+   - `Figma Icon Extraction Check`
+   - `Visual Fidelity Check` ← **MANDATORY per component**
+   - `Color Token Check` ← **MANDATORY per component**
+   - `Spacing Fidelity Check` ← **MANDATORY per section/card**
+4. **Visual Verification Gate (виконати для кожного major компонента):**
+   - Виклич `get_screenshot` для Figma-вузла компонента (node ID з Scenario §7)
+   - Зроби скріншот браузера з dev-сервера (localhost:5173 або відповідний порт)
+   - Порівняй side-by-side:
+     * Кольори фону/тексту відповідають hex з Scenario §12.1?
+     * Розміри шрифту, вага відповідає Figma?
+     * Відступи (padding, gap) відповідають px-значенням?
+     * Іконки правильні (правильний `data-name`, розмір, колір)?
+     * Бордер картки — лише лівий (`borderLeft`)?
+   - Запиши результат у `implemented/IMPLEMENTED_SCREEN_[NAME].md`:
+     ```
+     ### Visual Fidelity — [ComponentName]
+     - Figma node: [node-id]
+     - Delta: PASS / FAIL + конкретні відмінності
+     - Виправлення: [список]
+     ```
+   - **Якщо FAIL** — виправ і повтори порівняння перед переходом до наступного компонента
+5. Після КОЖНОГО атомарного кроку: оновлюй `implemented/IMPLEMENTED_SCREEN_[NAME].md`
+6. Пріоритет документів при конфлікті: **Tech Stack > ADR > Scenario > BRD**
+
 
 **Вихідні артефакти:**
 

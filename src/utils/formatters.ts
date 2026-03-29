@@ -1,0 +1,59 @@
+// src/utils/formatters.ts
+// Traces to: Scenario §12.1 Price/Number Formats, §9 BR-W1-04
+
+/**
+ * Format monetary amount — MUST match Figma: ₴12,400 (comma thousands separator)
+ * NEVER use toLocaleString('uk-UA') → returns "12 400" (space separator — WRONG)
+ */
+export function formatMoney(amount: number, currency = '₴'): string {
+  return `${currency}${Math.floor(amount)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+}
+
+/**
+ * Format per-unit price: ₴400/шт
+ * Traces to: Scenario §12.1 Price/Number Formats (Per-unit variant)
+ */
+export function formatPerUnitPrice(
+  amount: number,
+  unit: string,
+  currency = '₴',
+): string {
+  return `${currency}${Math.floor(amount)}/${unit}`;
+}
+
+const MONTHS_UK = [
+  'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
+  'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня',
+] as const;
+
+/**
+ * Format deadline to Ukrainian short label "До 25 березня"
+ * Also derives overdue/tomorrow flags for color coding.
+ * Traces to: Scenario §9 BR-W1-04 — tomorrow → yellow, overdue → red
+ */
+export function formatDeadline(isoDate: string): {
+  label: string;
+  isOverdue: boolean;
+  isTomorrow: boolean;
+} {
+  const deadline = new Date(isoDate);
+  const today = new Date();
+
+  // Normalize to midnight local time for day comparison
+  today.setHours(0, 0, 0, 0);
+  deadline.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round(
+    (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  const label = `До ${deadline.getDate()} ${MONTHS_UK[deadline.getMonth()]}`;
+
+  return {
+    label,
+    isOverdue: diffDays < 0,
+    isTomorrow: diffDays === 1, // Q1: tomorrow deadline → yellow warning color
+  };
+}

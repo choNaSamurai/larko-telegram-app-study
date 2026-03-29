@@ -25,16 +25,26 @@ specifically optimized for the Telegram Mini App environment.
 ## Output Standard
 
 ### 1. ADR Document (`adr/ADR_SCREEN_[NAME].md`)
-Follow the example in `adr-document`:
+
+Follow the template in [`references/adr_template.md`](./references/adr_template.md).
+
+**Core ADR Principles:**
+- ❌ Do NOT write "WHAT" — that is visible in the code.
+- ✅ DO write "WHY" — this is the most valuable part of an ADR.
+- ADR ≠ documentation. ADR is the *history of a decision*, not a full system description.
+- SA document = "how the system works" | ADR = "why we decided this way"
+- Many small ADRs > one big ADR.
+
+**Required sections:**
 - **Title**: ADR-XXX: [Decision Name]
 - **Status**: PROPOSED
 - **Context**: Project context and constraints (TMA specific).
 - **Problem**: What architectural problem are we solving for this screen?
-- **Options**: Comparison of at least 2 options (e.g., Mono vs Micro, Node vs Go).
+- **Options**: Comparison of at least 2 options (e.g., React Query vs SWR, Zustand vs Context).
 - **Decision**: The selected technical path.
-- **Rationale**: Why this choice (speed, team size, TMA constraints).
+- **Rationale**: Why this choice (MVP speed, team size, TMA constraints).
 - **Consequences**: Positive and negative impacts.
-- **Future**: Scaling considerations.
+- **Future**: Scaling or revisit conditions.
 
 ### 2. Tech Stack Document (`tech-stack/TECH_STACK_SCREEN_[NAME].md`)
 - **Step-by-Step Description**: Detailed technical steps to implement the screen.
