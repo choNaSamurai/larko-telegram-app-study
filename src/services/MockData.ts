@@ -1,10 +1,10 @@
 // src/services/MockData.ts
-// Traces to: Tech Stack §MockData.ts, ADR-001-C, ADR-002
+// Traces to: Tech Stack §MockData.ts, ADR-001-C, ADR-002, ADR-003
 // CONSTRAINT: Mock data lives ONLY here — never in components or hooks
 
 import type { BalanceData } from '@/types/balance.types';
-
 import type { Task } from '@/types/task.types';
+import type { UserProfile, LeaveType, LeaveRequest } from '@/types/leave.types';
 
 // Tomorrow's ISO date for deadline highlight testing (Q1 answer)
 const tomorrow = new Date();
@@ -164,3 +164,47 @@ export const MOCK_BALANCE_EMPTY: BalanceData = {
   periodLabel: 'Березень 2026',
   history: [],
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// W4 Profile Mock Data
+// Traces to: TECH_STACK_SCREEN_Profile_TimeOff_LeaveForm §MockData.ts
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const MOCK_PROFILE: UserProfile = {
+  id: 'u1',
+  name: 'Павло Мельник',
+  avatarUrl: null,
+  company: { name: 'Larko.ai Inc' },
+};
+
+export const MOCK_LEAVE_TYPES: LeaveType[] = [
+  { id: 'vacation',  label_uk: 'Відпустка',              label_en: 'Vacation' },
+  { id: 'sick',      label_uk: 'Лікарняний',              label_en: 'Sick Leave' },
+  { id: 'personal',  label_uk: 'Особистий день',          label_en: 'Personal Day' },
+  { id: 'holiday',   label_uk: 'Вихідний',                label_en: 'Holiday' },
+  { id: 'unpaid',    label_uk: 'Неоплачувана відпустка', label_en: 'Unpaid Leave' },
+  { id: 'family',    label_uk: 'Сімейна відпустка',      label_en: 'Family Leave' },
+  { id: 'training',  label_uk: 'Навчання',                label_en: 'Training' },
+  { id: 'other',     label_uk: 'Інше',                    label_en: 'Other' },
+];
+
+export const MOCK_LEAVE_REQUESTS: LeaveRequest[] = [
+  {
+    id: 'lr1',
+    type: 'Лікарняний',
+    startDate: '2026-03-10',
+    endDate: '2026-03-11',
+    durationDays: 2,
+    reason: 'Застуда, потрібен відпочинок',
+    status: 'pending',
+  },
+  {
+    id: 'lr2',
+    type: 'Відпустка',
+    startDate: '2026-03-20',
+    endDate: '2026-03-22',
+    durationDays: 3,
+    reason: 'Сімейна подорож',
+    status: 'approved',
+  },
+];
