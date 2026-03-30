@@ -12,9 +12,11 @@ contracts:
     - "tech-stack/TECH_STACK_SCREEN_[NAME].md"
     - "adr/ADR_SCREEN_[NAME].md"
     - "ba/04_BRD_Larko_MVP.md"
+    - "dad/DAD_[SCOPE].md (optional — required when implementing data layer via /local-db workflow)"
     - "Project root: /Users/pavlyshyn/AI/ai-wt(27032026)/"
   output:
     - "implemented/IMPLEMENTED_SCREEN_[NAME].md (including Class, Sequence, Activity, Component, and Use Case diagrams)"
+    - "implemented/IMPLEMENTED_Data_Layer.md (when implementing data layer from DAD)"
     - "Production-ready source code"
 
 description:
@@ -201,6 +203,27 @@ description:
         4. For list items: confirm the spacing between items matches Figma.
         Result: PASS if layout measurements match within ±1px of Figma spec.
 
+    - name: "Data Layer Contract Check"
+      when: "When implementing data layer from DAD (via /local-db workflow)"
+      check: >
+        1. Read dad/DAD_[SCOPE].md §4 Data Model.
+        2. Every entity implemented in src/db/ MUST have fields: id, updatedAt, isSynced, _localVersion.
+        3. SyncQueue and CacheMetadata tables MUST be present in AppDB.ts.
+        4. Every Repository MUST implement: getAll(), getById(), save(), delete(), getPendingSync(), markSynced().
+        5. SyncService MUST use navigator.locks.request before flush.
+        6. Cache TTL constants MUST use N * 60 * 1000 format (not inline numbers).
+        7. JWT tokens and refresh tokens MUST NOT be stored in IndexedDB.
+        Result: PASS only if all 7 points are satisfied.
+        FAIL → fix immediately, do not proceed to next phase.
+
+    - name: "DB Migration Check"
+      when: "When modifying AppDB.ts schema (adding/removing tables or indexes)"
+      check: >
+        1. DB version MUST be incremented (no version skipping).
+        2. An .upgrade() callback MUST be provided for data migration.
+        3. Migration scripts for new version MUST be stored in src/db/migrations/v[N].ts.
+        Result: PASS if version is incremented and upgrade callback handles existing data.
+
     - name: "Number Format Check"
       when: "Before implementing any component that displays prices or counts"
       check: >
@@ -232,4 +255,12 @@ description:
     - "Do padding, gap, and border-radius values match Figma px values (not approximated)?"
     - "Is the Visual Fidelity Check gate PASS for every component I implemented?"
     - "Did I log the visual diff result (PASS/FAIL + corrections) in implemented/ for every component?"
+    # ─── DATA LAYER (required when implementing via /local-db workflow) ───
+    - "If implementing from DAD: did I read dad/DAD_*.md before writing any code?"
+    - "Does every entity in src/db/ have: id, updatedAt, isSynced, _localVersion?"
+    - "Is the SyncQueue table present in AppDB.ts with retryCount, action, lastAttemptAt?"
+    - "Does SyncService use navigator.locks.request to prevent concurrent flush?"
+    - "Are cache TTL constants in src/constants/cache.ts as N * 60 * 1000 (not inline)?"
+    - "If schema changed: did I increment DB version and write an .upgrade() migration?"
+    - "Are JWT tokens and refresh tokens NOT stored in IndexedDB?"
 
