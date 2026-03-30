@@ -6,6 +6,7 @@ import type { BalanceData } from '@/types/balance.types';
 import type { Task } from '@/types/task.types';
 import type { UserProfile, LeaveType, LeaveRequest } from '@/types/leave.types';
 import type { OrderDetail } from '@/types/order.types';
+import type { TimeLogEntry } from '@/types/timeLog.types';
 
 // Tomorrow's ISO date for deadline highlight testing (Q1 answer)
 const tomorrow = new Date();
@@ -360,3 +361,83 @@ export const MOCK_ORDER_MAP: Record<string, OrderDetail> = {
   'task-6': MOCK_ORDER_NEW, // same as new for extra card
   'order-done': MOCK_ORDER_DONE,
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// W2.1 Add Time Log Mock Data
+// Traces to: Tech Stack §MockData.ts, Scenario §8 States Empty/Populated
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Empty state — no logs for the day yet */
+export const MOCK_TIME_LOGS_EMPTY: TimeLogEntry[] = [];
+
+/** Populated state — 4 entries matching Figma "populated" variant */
+export const MOCK_TIME_LOGS_POPULATED: TimeLogEntry[] = [
+  {
+    id: 'tl-001',
+    orderId: 'task-1',
+    workerId: 'worker-001',
+    logDate: new Date().toISOString().split('T')[0],
+    workStart: '08:00',
+    workEnd: '17:00',
+    breaks: [{ id: 'b1', breakStart: '12:00', breakEnd: '13:00' }],
+    netHours: 8.0,
+    comment: '',
+    syncStatus: 'synced',
+  },
+  {
+    id: 'tl-002',
+    orderId: 'task-1',
+    workerId: 'worker-001',
+    logDate: new Date().toISOString().split('T')[0],
+    workStart: '18:00',
+    workEnd: '20:30',
+    breaks: [],
+    netHours: 2.5,
+    comment: 'Доробляв фасад після дощу',
+    syncStatus: 'synced',
+  },
+  {
+    id: 'tl-003',
+    orderId: 'task-1',
+    workerId: 'worker-001',
+    logDate: new Date().toISOString().split('T')[0],
+    workStart: '07:00',
+    workEnd: '19:30',
+    breaks: [
+      { id: 'b2', breakStart: '10:00', breakEnd: '10:30' },
+      { id: 'b3', breakStart: '13:00', breakEnd: '14:00' },
+    ],
+    netHours: 11.0,
+    comment: 'Перерви: 1.5 год • Важка зміна',
+    syncStatus: 'synced',
+  },
+  {
+    id: 'tl-004',
+    orderId: 'task-1',
+    workerId: 'worker-001',
+    logDate: new Date().toISOString().split('T')[0],
+    workStart: '09:00',
+    workEnd: '12:00',
+    breaks: [],
+    netHours: 3.0,
+    comment: '',
+    syncStatus: 'synced',
+  },
+];
+
+/** Per-Unit variant mock (Variant B from Figma) */
+export const MOCK_TIME_LOGS_PER_UNIT: TimeLogEntry[] = [
+  {
+    id: 'tl-pu-001',
+    orderId: 'task-5',
+    workerId: 'worker-001',
+    logDate: new Date().toISOString().split('T')[0],
+    workStart: '08:00',
+    workEnd: '17:00',
+    breaks: [{ id: 'b4', breakStart: '12:00', breakEnd: '13:00' }],
+    netHours: 8.0,
+    unitsCompleted: 130,
+    syncStatus: 'synced',
+  },
+];
+

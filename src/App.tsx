@@ -3,6 +3,7 @@
 // CONSTRAINT: Bottom nav tab switching and sub-screen navigation happen HERE
 // Sub-screens (W5, W6) use a stack pushed from Profile (W4)
 // W2 Order Hub: pushed from My Tasks (W1) when a task card is tapped
+// W2.1 Add Time Log: pushed from Order Hub when "+ Add Time" is tapped
 
 import { useState } from 'react';
 import { MyTasksScreen } from '@/components/screens/MyTasks/MyTasksScreen';
@@ -11,7 +12,9 @@ import { ProfileScreen } from '@/components/screens/Profile/ProfileScreen';
 import { TimeOffScreen } from '@/components/screens/TimeOff/TimeOffScreen';
 import { LeaveFormScreen } from '@/components/screens/LeaveForm/LeaveFormScreen';
 import { OrderHubScreen } from '@/components/screens/OrderHub/OrderHubScreen';
+import { AddTimeLogScreen } from '@/components/screens/AddTimeLog/AddTimeLogScreen';
 import type { BottomNavTab } from '@/components/BottomNav';
+import type { AddTimeLogContext } from '@/types/timeLog.types';
 
 // Sub-screen stack within the Profile section
 type ProfileSubScreen = 'profile' | 'time-off' | 'leave-form' | 'support';
@@ -21,6 +24,8 @@ export function App() {
   const [profileSubScreen, setProfileSubScreen] = useState<ProfileSubScreen>('profile');
   // W2 Order Hub navigation: null = not open, string = orderId to show
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  // W2.1 Add Time Log: null = not open, context object = screen is open
+  const [addTimeContext, setAddTimeContext] = useState<AddTimeLogContext | null>(null);
 
   const handleTabChange = (tab: BottomNavTab) => {
     // When returning to profile tab, always reset to profile root
@@ -42,12 +47,24 @@ export function App() {
     setProfileSubScreen('time-off');
   };
 
+  // W2.1: Add Time Log — shown on top of Order Hub stack
+  if (addTimeContext) {
+    return (
+      <AddTimeLogScreen
+        context={addTimeContext}
+        onBack={() => setAddTimeContext(null)}
+        onSaved={() => setAddTimeContext(null)}
+      />
+    );
+  }
+
   // W2: Order Hub opened — fullscreen overlay
   if (selectedOrderId) {
     return (
       <OrderHubScreen
         orderId={selectedOrderId}
         onBack={() => setSelectedOrderId(null)}
+        onOpenAddTime={(ctx) => setAddTimeContext(ctx)}
       />
     );
   }

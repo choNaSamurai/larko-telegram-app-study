@@ -26,12 +26,15 @@ import { DisputeResponseForm } from './DisputeResponseForm';
 import { OrderHubSkeleton } from './OrderHubSkeleton';
 import { OrderHubError } from './OrderHubError';
 
+import type { AddTimeLogContext } from '@/types/timeLog.types';
+
 interface OrderHubScreenProps {
   orderId: string;
   onBack: () => void;
+  onOpenAddTime?: (ctx: AddTimeLogContext) => void;
 }
 
-export function OrderHubScreen({ orderId, onBack }: OrderHubScreenProps) {
+export function OrderHubScreen({ orderId, onBack, onOpenAddTime }: OrderHubScreenProps) {
   const queryClient = useQueryClient();
 
   // TMA BackButton integration — Traces to: Scenario §10 TMA Integration
@@ -175,8 +178,17 @@ export function OrderHubScreen({ orderId, onBack }: OrderHubScreenProps) {
             canAddTime={order.canAddTime}
             isDone={isLocked}
             onAddTime={() => {
-              // TODO: open Add Time bottom sheet (Phase 2 feature)
-              alert('Додавання часу — буде додано у наступному релізі');
+              if (onOpenAddTime) {
+                // Open W2.1 Add Time Log screen
+                onOpenAddTime({
+                  orderId,
+                  orderNumber: order.number,
+                  isPerUnit: false, // TODO: derive from order.paymentModel
+                  unitLabel: 'м²',
+                });
+              } else {
+                alert('Додавання часу — буде додано у наступному релізі');
+              }
             }}
             onViewHistory={() => {
               // TODO: open Time History bottom sheet (Phase 2)
