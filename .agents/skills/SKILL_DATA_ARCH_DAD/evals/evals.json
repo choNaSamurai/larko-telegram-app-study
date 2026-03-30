@@ -1,0 +1,20 @@
+{
+  "skill_name": "SKILL_DATA_ARCH_DAD",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We have a Telegram Mini App with task management. The tech-stack defines TaskService with Task { id, title, status, assigneeId, price }. There's no local storage or sync strategy yet. Produce a DAD for the global data layer.",
+      "expected_output": "A DAD file at dad/DAD_Global_Data_Layer.md containing: (1) Technology Decision choosing Dexie.js with a rejection table covering localStorage and in-memory; (2) Data Model with Task entity including updatedAt, isSynced, _localVersion fields; SyncQueue entity with retryCount, action, entityType; CacheMetadata entity; (3) Sync strategy with optimistic UI write path and exponential backoff; (4) TTL values in milliseconds per entity; (5) Layered Architecture diagram UI → Hooks → Repository → LocalDB → SyncService → API; (6) All 7 edge cases documented; (7) Security section."
+    },
+    {
+      "id": 2,
+      "prompt": "The Larko TMA already has My Tasks and Order Hub implemented. Tech stack uses TanStack Query with staleTime: 5min. There's no offline story. Add a DAD for the offline-first sync layer covering tasks and timeLog entities.",
+      "expected_output": "A DAD file at dad/DAD_Larko_Sync_Layer.md that: (1) Reads existing TECH_STACK_SCREEN_My_Tasks.md and TECH_STACK_SCREEN_Order_Hub.md to map existing entity types; (2) Defines Task and TimeLog entities with isSynced and updatedAt fields; (3) Specifies last-write-wins conflict resolution policy; (4) Defines separate TTLs for tasks (5min) and timeLogs (10min); (5) Shows how SyncService integrates with existing TanStack Query invalidateQueries; (6) Documents first-launch edge case where DB is empty."
+    },
+    {
+      "id": 3,
+      "prompt": "Produce a DAD for a financial app with loan repayment tracking. Entities: Loan { id, amount, status, dueDate }, ScheduledStep { id, loanId, amount, status }. Data must never be lost — even offline. Financial data must never be stored in plain localStorage.",
+      "expected_output": "A DAD that: (1) Selects Dexie.js with specific rejection of localStorage due to financial data sensitivity and 5MB limit; (2) Defines Loan and ScheduledStep entities with relationships (1 Loan N ScheduledSteps); (3) Selects server-priority conflict resolution (not last-write-wins) with explicit rationale: financial data integrity requires server as source of truth; (4) Sets aggressive TTL: 1 * 60 * 1000 (1 min) for financial data; (5) Security section explicitly lists Loan.amount and payment details as safe to store but tokens as forbidden; (6) DEAD_LETTER handling shows persistent user notification with manual retry."
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+1. Overview
+Мета:
+Описати, як додаток працює з даними локально та синхронізується з сервером.
+
+Scope:
+-Telegram Mini App (web)
+-Client-side storage
+-Sync з backend API
+
+Не входить:
+-Backend реалізація
+-UI
+
+2. Constraints & Context
+Платформа:
+-Telegram Mini App (browser environment)
+
+Обмеження:
+-немає прямого доступу до SQLite
+-обмеження браузера
+-можливий offline режим
+-нестабільний інтернет
+
+3. Technology Decision
+Обрана технологія:
+-IndexedDB через Dexie.js
+Чому:
+-async
+-великі об’єми даних
+-транзакції
+-краще ніж localStorage
+Альтернативи:
+-localStorage → відхилено (немає структури, малий обсяг)
+-in-memory → відхилено (немає персистентності)
+
+4. Data Model
+Основні сутності:
+-User
+{
+  id: string
+  name: string
+  updatedAt: number
+}
+-Task
+{
+  id: string
+  title: string
+  status: 'pending' | 'done'
+  updatedAt: number
+  isSynced: boolean
+}
+-SyncQueue
+{
+  id: string
+  entity: 'task'
+  action: 'create' | 'update' | 'delete'
+  payload: any
+  createdAt: number
+}
+
+5. Storage Structure
+DB Name: app_db
+
+Tables:
+-users
+-tasks
+-sync_queue
+
+Indexes:
+-tasks.updatedAt
+-tasks.isSynced
+
+6. Data Flow
+Створення таски:
+-Запис у local DB
+-Додавання в SyncQueue
+-UI оновлюється одразу (optimistic)
+Синхронізація:
+1. Беремо SyncQueue
+2. Відправляємо на API
+3. При success:
+    -mark isSynced = true
+    -видаляємо з queue
+
+7. Sync Strategy (🔥 найважливіше)
+Тип:
+Optimistic UI + Background Sync
+Conflict Resolution:
+Правило:
+-last write wins (по updatedAt)
+Альтернатива:
+-server priority (якщо критично)
+Retry Strategy:
+-exponential backoff
+-max retries: 5
+
+8. Caching Strategy
+Що кешуємо:
+-users
+-tasks
+TTL:
+-5 хвилин (для read-through cache)
+
+9. Data Layer Architecture
+UI
+ ↓
+Hooks / State
+ ↓
+Repository
+ ↓
+Local DB (IndexedDB)
+ ↓
+Sync Service → API
+
+Repository responsibilities:
+-getTasks()
+-saveTask()
+-syncTasks()
+
+10. Offline Behavior
+При offline:
+-всі write → local DB
+-додаються в SyncQueue
+-sync запускається при reconnect
+
+11. Migrations
+Версія БД:
+version: 1
+При зміні:
+-додаємо migration scripts
+
+12. Error Handling
+-DB errors → fallback retry
+-Sync errors → queue retry
+-критичні → логування
+
+13. Security
+-не зберігати sensitive data
+-токени тільки в memory / secure storage
+
+14. Open Questions
+-чи потрібен real-time sync?
+-чи є multi-device сценарій?
