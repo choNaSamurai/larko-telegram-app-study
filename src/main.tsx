@@ -1,10 +1,12 @@
 // src/main.tsx
-// Entry point — TMA init + React Query provider
+// Entry point — TMA init + React Query provider + DB initialization
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
+import { initDB } from './db/AppDB';
+import { SyncService } from './services/SyncService';
 import './index.css';
 
 // ── TMA Initialization (MANDATORY before React render) ────────────────────
@@ -19,6 +21,13 @@ try {
 } catch {
   // Non-TMA environment (browser dev) — continue normally
 }
+
+// ── DB initialization (DAD §16 — call once on app startup) ─────────────────
+// initDB handles corruption gracefully (see AppDB.ts)
+await initDB();
+// Register online + visibilitychange flush triggers (DAD §7)
+SyncService.registerListeners();
+console.info('[App] DB initialized. SyncService listeners registered.');
 
 // ── React Query client ──────────────────────────────────────────────────────
 const queryClient = new QueryClient({

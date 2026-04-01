@@ -123,16 +123,27 @@ Phase 4 — Cache Layer
   ├── Створи src/db/repositories/CacheMetadataRepository.ts
   └── Інтегруй TTL-перевірку в кожен Repository.getAll()
 
-Phase 5 — Integration
+Phase 5 — Integration  ← ⚠️ MANDATORY. Workflow НЕ завершено без цього кроку.
   ├── Оновлюй існуючі сервіси (src/services/*.ts) → замінюй прямі API-виклики
   │     на Repository calls + SyncQueue
-  └── Переконайся, що UI не змінюється (тільки data layer)
+  ├── Для кожного інтегрованого сервісу — задокументуй у implemented/ (step log)
+  └── Після останнього сервісу — запусти: npx tsc --noEmit → 0 errors
+
+⛔ STOP GATE після Phase 5:
+  Workflow вважається ЗАВЕРШЕНИМ тільки якщо:
+  - [ ] Кожен src/services/*.ts (окрім balanceService, якщо Q2=confirmed) використовує Repository
+  - [ ] `npx tsc --noEmit` → 0 errors
+  - [ ] implemented/IMPLEMENTED_Data_Layer.md оновлено з записом про Phase 5
+  - [ ] Відкрий браузер → перевір Console: немає Dexie errors, є Cache HIT/MISS логи
+
+  Якщо хоч одна умова не виконана → НЕ завершуй workflow. Виправ і перевір знову.
 ```
 
-**Verification gates після кожного кроку:**
+**Verification gates після КОЖНОГО кроку (не після всього блоку!):**
 - `Type Contract Check` — типи відповідають DAD §4 Data Model
 - `TMA Compatibility Check` — немає browser-native API несумісних з TMA
-- `Log Completeness Check` — лог оновлено в `implemented/`
+- `Log Completeness Check` — лог оновлено в `implemented/` після КОЖНОЇ фази
+- `Phase 5 Integration Gate` — ОБОВ'ЯЗКОВИЙ фінальний gate, описано вище в ⛔ STOP GATE
 
 **Вихідні артефакти:**
 
@@ -278,9 +289,11 @@ src/constants/cache.ts (якщо нові TTL)
 
 **Правила зупинки:**
 - Якщо `validate_dad.sh` → ERRORS > 0 перед передачею → **зупинись і виправ**
-- Якщо в DAD є `[BLOCKING]` питання без fallback → **зупинись і запитай користувача**
+- Якщо в DAD є `[BLOCKING]` питання без fallback в §16 → **зупинись і запитай користувача**
 - Якщо Implementer знаходить невідповідність типів → **зупинись і повідом**
 - Якщо Маршрут Б → DELTA = 0 → **зупинись після Б1, не запускай Б2**
+- **Якщо Phase 5 Integration не завершена → workflow НЕ завершений, навіть якщо Phases 1–4 PASS**
+- Якщо `npx tsc --noEmit` після Phase 5 показує errors → **зупинись і виправ перед закриттям**
 
 ---
 

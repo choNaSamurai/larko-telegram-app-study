@@ -45,6 +45,14 @@ This skill transforms architectural specifications (ADR, Tech Stack) and UI scen
 ### Phase 3.5: Visual Fidelity Verification (MANDATORY — per component)
 
 > **This phase CANNOT be skipped.** Run after implementing every major visual component.
+> **EXCEPTION — Data Layer only:** When implementing the data layer via `/local-db` workflow
+> (no Figma screens, no UI components), Phase 3.5 is N/A. You MUST log this explicitly:
+> ```markdown
+> ### Phase 3.5: Visual Fidelity
+> N/A — Data layer implementation (no UI components). Visual fidelity does not apply.
+> Replaced with: Data Flow verification in Phase 5 Integration Gate.
+> ```
+> Skipping Phase 3.5 WITHOUT this log entry is treated as FAIL.
 
 For **each major component** (Header, Card, Status Badge, Bottom Bar, Form, etc.):
 

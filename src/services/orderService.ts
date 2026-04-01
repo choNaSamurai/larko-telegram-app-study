@@ -1,101 +1,210 @@
 // src/services/orderService.ts
-// Traces to: TECH_STACK_SCREEN_Order_Hub §orderService.ts
-// ADR: Uses mock data with 600ms simulated delay; swap fetchOrderById body for real API later
+// Data access layer — cache-first via IndexedDB + optimistic mutations via SyncQueue.
+// Source: DAD_Global_Data_Layer.md §6 Data Flow, §7 Sync Strategy
 
 import type { OrderDetail, DisputeResponsePayload } from '@/types/order.types';
 import { MOCK_ORDER_MAP, MOCK_ORDER_IN_PROGRESS } from './MockData';
+import { orderRepository, timeLogRepository, orderPhotoRepository, syncQueueRepository } from '@/db/repositories';
+import {
+  toLocalOrder,
+  toLocalTimeLogEntry,
+  toLocalOrderPhoto,
+  fromLocalOrder,
+  fromLocalTimeLogToTimeLog,
+  fromLocalOrderPhoto,
+} from '@/db/mappers';
+import type { SyncQueueItem } from '@/types/db.types';
 
-const SIMULATED_DELAY_MS = 600;
-const delay = () => new Promise((r) => setTimeout(r, SIMULATED_DELAY_MS));
+const delay = () => new Promise((r) => setTimeout(r, 600));
 
-// In-memory state store — persists mutations within current browser session
-// Real API won't need this; it's purely a dev-time convenience.
-const _stateOverrides: Map<string, Partial<OrderDetail>> = new Map();
-
-/**
- * Fetches full order details for the Order Hub.
- * TODO: Replace with:
- *   fetch(`/api/v1/orders/${id}`, { headers: { Authorization: `Bearer ${token}` } })
- */
-export async function fetchOrderById(id: string): Promise<OrderDetail> {
-  await delay();
-  const base = MOCK_ORDER_MAP[id] ?? MOCK_ORDER_IN_PROGRESS;
-  const overrides = _stateOverrides.get(id);
-  return overrides ? { ...base, ...overrides } : base;
+function makeSyncItem(
+  partial: Omit<SyncQueueItem, 'id' | 'createdAt' | 'lastAttemptAt' | 'retryCount' | 'error'>
+): SyncQueueItem {
+  return {
+    ...partial,
+    id: `sync-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    createdAt: Date.now(),
+    lastAttemptAt: null,
+    retryCount: 0,
+    error: null,
+  };
 }
 
 /**
- * Updates order status — 'start' → in_progress, 'complete' → checking (waiting manager).
- * TODO: Replace with: PATCH /api/v1/orders/{id}/status
+ * Fetches full order details for the Order Hub.
+ * Cache-first: reads from IndexedDB if TTL is fresh.
+ * Cold start: fetches from API (mock), saves order + timeLogs + photos to DB.
+ *
+ * TODO (real API): Replace mock fetch with:
+ *   fetch(`/api/v1/orders/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+ */
+export async function fetchOrderById(id: string): Promise<OrderDetail> {
+  const orderRepo = orderRepository.forOrder(id);
+  const timeLogRepo = timeLogRepository.forOrder(id);
+
+  // ── Cache HIT ──────────────────────────────────────────────────────────────
+  if (await orderRepo.isCacheFresh()) {
+    const localOrder = await orderRepository.getById(id);
+    if (localOrder) {
+      console.debug('[orderService] Cache HIT for order', id);
+      const localTimeLogs = await timeLogRepository.getByOrderId(id);
+      const localPhotos = await orderPhotoRepository.getByOrderId(id);
+      return fromLocalOrder(
+        localOrder,
+        localTimeLogs.map(fromLocalTimeLogToTimeLog),
+        localPhotos.map(fromLocalOrderPhoto),
+      );
+    }
+  }
+
+  // ── Cache MISS — fetch from API (mock) ────────────────────────────────────
+  console.debug('[orderService] Cache MISS — fetching order', id);
+  await delay();
+  const order = MOCK_ORDER_MAP[id] ?? MOCK_ORDER_IN_PROGRESS;
+
+  // Persist order to DB
+  await orderRepository.save(toLocalOrder(order));
+  await orderRepo.markFetched();
+
+  // Persist time logs (from the OrderDetail.timeLogs)
+  if (order.timeLogs.length > 0) {
+    await timeLogRepository.saveMany(
+      order.timeLogs.map(tl => toLocalTimeLogEntry({
+        id: tl.id,
+        orderId: id,
+        workerId: 'worker-001',
+        logDate: tl.date,
+        workStart: tl.workStart,
+        workEnd: tl.workEnd,
+        breaks: tl.breaks.map((b, i) => ({ id: `b-${i}`, breakStart: b.start, breakEnd: b.end })),
+        netHours: tl.netHours,
+        syncStatus: 'synced',
+        unitsCompleted: tl.unitsCompleted,
+      }))
+    );
+    await timeLogRepo.markFetched();
+  }
+
+  // Persist photos
+  if (order.photos.length > 0) {
+    await orderPhotoRepository.saveMany(
+      order.photos.map(p => toLocalOrderPhoto(p, id))
+    );
+  }
+
+  return order;
+}
+
+/**
+ * Updates order status (optimistic UI + SyncQueue).
+ * Status change is written to DB immediately; background sync flushes to API.
  */
 export async function updateOrderStatus(
   id: string,
   action: 'start' | 'complete',
 ): Promise<{ status: string }> {
-  await delay();
   const newStatus = action === 'start' ? 'in_progress' : 'checking';
-  // Persist in-memory so re-fetch returns updated state
-  const existing = _stateOverrides.get(id) ?? {};
-  _stateOverrides.set(id, {
-    ...existing,
-    status: newStatus as OrderDetail['status'],
-    // Update derived flags for in_progress
-    ...(newStatus === 'in_progress' && {
-      canAddTime: true,
-      canAddPhotos: true,
-      canReportIssue: true,
-      ctaAction: 'complete',
-    }),
-    // Update derived flags for checking
-    ...(newStatus === 'checking' && {
-      canAddTime: false,
-      canAddPhotos: false,
-      canReportIssue: false,
-      ctaAction: null,
-    }),
-  });
+
+  // ── Optimistic update to IndexedDB ─────────────────────────────────────────
+  await orderRepository.updateStatus(id, newStatus as OrderDetail['status']);
+
+  // Invalidate cache so next fetch re-reads from DB
+  await orderRepository.forOrder(id).invalidateCache();
+
+  // ── Enqueue to SyncQueue ───────────────────────────────────────────────────
+  await syncQueueRepository.enqueue(makeSyncItem({
+    entityType: 'order',
+    action: 'update',
+    payload: { id, status: newStatus, action },
+  }));
+
+  console.debug('[orderService] Status updated optimistically:', id, '→', newStatus);
   return { status: newStatus };
 }
 
 /**
  * Uploads a photo to the order.
- * TODO: Replace with: POST /api/v1/orders/{id}/photos (multipart/form-data)
+ * Saves to DB immediately with isSynced=false; enqueues upload to SyncQueue.
  */
 export async function uploadOrderPhoto(
-  _orderId: string,
+  orderId: string,
   file: File,
 ): Promise<{ id: string; url: string; thumbnailUrl: string }> {
   await delay();
-  const url = URL.createObjectURL(file);
-  return { id: `p-${Date.now()}`, url, thumbnailUrl: url };
+  const blobUrl = URL.createObjectURL(file);
+  const tempId = `temp-photo-${Date.now()}`;
+
+  // Save to DB as pending upload
+  await orderPhotoRepository.save({
+    id: tempId,
+    orderId,
+    url: blobUrl,
+    thumbnailUrl: blobUrl,
+    uploadedAt: new Date().toISOString().split('T')[0],
+    workerName: 'You',
+    updatedAt: Date.now(),
+    createdAt: Date.now(),
+    isSynced: false,
+    _localVersion: 1,
+  });
+
+  // Increment photo count on order
+  await orderRepository.incrementPhotosToday(orderId);
+
+  // Enqueue upload to SyncQueue
+  await syncQueueRepository.enqueue(makeSyncItem({
+    entityType: 'orderPhoto',
+    action: 'create',
+    payload: { orderId, tempId, blobUrl },
+  }));
+
+  return { id: tempId, url: blobUrl, thumbnailUrl: blobUrl };
 }
 
 /**
  * Deletes a photo from the order.
- * TODO: Replace with: DELETE /api/v1/orders/{id}/photos/{photoId}
+ * Removes from DB immediately; enqueues DELETE to SyncQueue.
  */
 export async function deleteOrderPhoto(
-  _orderId: string,
-  _photoId: string,
+  orderId: string,
+  photoId: string,
 ): Promise<void> {
   await delay();
+
+  // Remove from DB
+  await orderPhotoRepository.delete(photoId);
+  await orderRepository.decrementPhotosToday(orderId);
+
+  // If it was a temp (unsynced) photo, no need to enqueue — remove from SyncQueue instead
+  const isTempPhoto = photoId.startsWith('temp-photo-');
+  if (!isTempPhoto) {
+    await syncQueueRepository.enqueue(makeSyncItem({
+      entityType: 'orderPhoto',
+      action: 'delete',
+      payload: { orderId, photoId },
+    }));
+  }
 }
 
 /**
- * Submits Worker's response to a dispute (accept or contest).
- * TODO: Replace with: POST /api/v1/orders/{id}/dispute/response
+ * Submits Worker's response to a dispute.
+ * Applies optimistic status update to DB; enqueues to SyncQueue.
  */
 export async function submitDisputeResponse(
   id: string,
   payload: DisputeResponsePayload,
 ): Promise<void> {
   await delay();
-  // Persist resolved dispute state in-memory
-  const existing = _stateOverrides.get(id) ?? {};
-  _stateOverrides.set(id, {
-    ...existing,
-    status: payload.action === 'accept' ? 'done' : 'dispute',
-    ctaAction: null,
-  });
-  console.log('[Mock] Dispute response submitted:', payload);
+
+  const newStatus = payload.action === 'accept' ? 'done' : 'dispute';
+  await orderRepository.updateStatus(id, newStatus as OrderDetail['status']);
+  await orderRepository.forOrder(id).invalidateCache();
+
+  await syncQueueRepository.enqueue(makeSyncItem({
+    entityType: 'order',
+    action: 'update',
+    payload: { id, disputeAction: payload.action, explanation: payload.explanation },
+  }));
+
+  console.debug('[orderService] Dispute response enqueued:', id, payload.action);
 }

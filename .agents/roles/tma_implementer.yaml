@@ -136,7 +136,7 @@ description:
         Navigation must use the project router, not native browser APIs.
 
     - name: "Log Completeness Check"
-      when: "After every atomic coding step"
+      when: "After every atomic coding step AND after every complete Phase (1–5) when implementing data layer"
       check: >
         implemented/IMPLEMENTED_SCREEN_[NAME].md must contain an entry for the current step with:
         1. Action taken (1–2 sentences describing what was done and why).
@@ -147,7 +147,12 @@ description:
              - component composition graph
              - infinite scroll or pagination logic
            NOT required for: plain type definitions, mock data, simple Zustand stores.
+           For DATA LAYER ONLY: if no Figma component exists, replace Visual Fidelity diagram
+           with a Data Flow diagram (Local DB → Service → Hook → UI).
         4. Verification gate result: PASS / FAIL + notes.
+        ⛔ NEVER move to the next phase without completing the log for the current one.
+        ⛔ When implementing data layer via /local-db workflow: log must include a Phase 5
+           entry that confirms all services are integrated (see 'Phase 5 Integration Gate').
 
     - name: "Global Layout Check"
       when: "Before creating any new screen root component"
@@ -216,6 +221,26 @@ description:
         Result: PASS only if all 7 points are satisfied.
         FAIL → fix immediately, do not proceed to next phase.
 
+    - name: "Phase 5 Integration Gate"
+      when: "After implementing all Repositories and SyncService (data layer completion check)"
+      check: >
+        This gate MUST run before marking the /local-db workflow as complete.
+        1. Every src/services/*.ts that has a corresponding Repository MUST use Repository calls
+           instead of direct mock data / API calls. Exception: services explicitly excluded in DAD
+           (e.g., balanceService if Q2=confirmed in DAD §15).
+        2. Every mutating service function MUST enqueue to SyncQueue on write.
+        3. Run: npx tsc --noEmit → must exit with 0 errors.
+        4. Open the app in browser → check Console:
+           - No Dexie initialization errors.
+           - At least one Cache MISS log on first load (proves service calls DB).
+           - At least one Cache HIT log after reload (proves caching works).
+        5. implemented/IMPLEMENTED_Data_Layer.md MUST have a Phase 5 section with:
+           - List of all integrated services.
+           - TypeScript check result (0 errors).
+           - Browser console verification result.
+        Result: PASS only if ALL 5 points are satisfied.
+        ⛔ FAIL → workflow is NOT complete. Fix immediately. Do NOT report workflow as done.
+
     - name: "DB Migration Check"
       when: "When modifying AppDB.ts schema (adding/removing tables or indexes)"
       check: >
@@ -263,4 +288,8 @@ description:
     - "Are cache TTL constants in src/constants/cache.ts as N * 60 * 1000 (not inline)?"
     - "If schema changed: did I increment DB version and write an .upgrade() migration?"
     - "Are JWT tokens and refresh tokens NOT stored in IndexedDB?"
+    - "⛔ PHASE 5 GATE: Have I integrated ALL services with Repositories (not just created the Repositories)?"
+    - "⛔ PHASE 5 GATE: Did I run npx tsc --noEmit after Phase 5 and got 0 errors?"
+    - "⛔ PHASE 5 GATE: Did I verify Cache HIT/MISS logs in browser console after Phase 5?"
+    - "⛔ PHASE 5 GATE: Is implemented/IMPLEMENTED_Data_Layer.md updated with Phase 5 section?"
 

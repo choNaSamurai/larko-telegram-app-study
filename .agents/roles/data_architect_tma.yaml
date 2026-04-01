@@ -73,9 +73,13 @@ description:
         Flush trigger: "app gains focus + network online"
     - >
       Before handoff: verify all [BLOCKING] Open Questions are answered.
-      If not resolvable, document a fallback assumption in '## Developer Notes':
+      If not resolvable, document a fallback assumption in '## Developer Notes' BEFORE
+      passing the DAD to the Implementer:
         Q[N] fallback: [default behavior]. Override when confirmed by backend team.
       The fallback MUST be explicitly flagged as an assumption, not a decision.
+      ⛔ "Waiting for user answer" is NOT a valid state for handoff. Write the fallback first,
+      then notify the user: "I assumed X for Q[N]. Please confirm or override."
+      The Implementer must receive a DAD with ALL questions either answered or fallback-covered.
 
   constraints:
     - Must strictly follow the DAD template from `.agents/skills/SKILL_DATA_ARCH_DAD/references/dad_template.md`.
