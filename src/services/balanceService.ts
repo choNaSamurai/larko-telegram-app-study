@@ -1,29 +1,92 @@
 // src/services/balanceService.ts
-// Traces to: Tech Stack §balanceService.ts, ADR-002-A (React Query), ADR-002-C (mock)
-// CONSTRAINT: ALL balance data access goes through this module — never fetch() in components
+// Data access layer — real API: worker balance + history.
+// Source: backend/api_endpoints_reference.md §Finance
+//
+// REAL API:
+//   GET /finance/companies/{company_id}/balance/{member_id}
+//   GET /finance/companies/{company_id}/balance/{member_id}/history
 
-import { MOCK_BALANCE_DEFAULT } from '@/services/MockData';
-import type { BalanceData, BalancePeriod } from '@/types/balance.types';
+import type { BalanceData, BalancePeriod, BalanceHistoryItem, HistoryItemType } from '@/types/balance.types';
+import { getWorkerBalance, getBalanceHistory } from '@/api/financeApi';
+import type { BalanceTransactionEntry } from '@/api/financeApi';
+import { getAuthState } from '@/stores/authStore';
 
-const SIMULATED_DELAY_MS = 600;
+// ─── Mappers ──────────────────────────────────────────────────────────────────
+
+/** Map API transaction_type → UI HistoryItemType */
+function mapTransactionType(apiType: string): HistoryItemType {
+  if (apiType.includes('overtime')) return 'overtime';
+  if (apiType.includes('advance')) return 'advance';
+  return 'earned';  // timelog_earn, bonus, adjustment → earned
+}
+
+/** Format ISO date → Ukrainian short date string "23 бер" */
+function formatUkDate(isoDate: string): string {
+  try {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+  } catch {
+    return isoDate.slice(0, 10);
+  }
+}
+
+/** Derive current period label from BalancePeriod */
+function periodLabel(period: BalancePeriod): string {
+  const now = new Date();
+  if (period === 'week') return 'Поточний тиждень';
+  if (period === 'all') return 'Весь час';
+  // 'month' → e.g. "Квітень 2026"
+  return now.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+}
+
+function mapTransaction(t: BalanceTransactionEntry): BalanceHistoryItem {
+  const type = mapTransactionType(t.transaction_type);
+  return {
+    id: `tx-${t.date}-${Math.random().toString(36).slice(2)}`,
+    type,
+    name: t.order_title ?? t.description ?? (type === 'advance' ? 'Аванс' : 'Нарахування'),
+    date: formatUkDate(t.date),
+    hours: type !== 'advance'
+      ? undefined   // hours appear in description — not separately in API
+      : undefined,
+    amount: type === 'advance' ? -Math.abs(t.amount) : Math.abs(t.amount),
+    currency: '₴',
+  };
+}
 
 /**
  * Fetches balance snapshot + history for the authenticated worker.
  *
- * TODO: Replace mock with real API:
- *   fetch(`/api/v1/worker/balance?period=${period}`, {
- *     headers: { Authorization: `Bearer ${token}` }
- *   })
+ * REAL API:
+ *   GET /finance/companies/{company_id}/balance/{member_id}
+ *   GET /finance/companies/{company_id}/balance/{member_id}/history
  */
 export async function fetchWorkerBalance(period: BalancePeriod): Promise<BalanceData> {
-  await new Promise((r) => setTimeout(r, SIMULATED_DELAY_MS));
+  const { companyId, memberId } = getAuthState();
 
-  // Uncomment to test specific states:
-  // return MOCK_BALANCE_NEGATIVE;
-  // return MOCK_BALANCE_EMPTY;
+  if (!companyId || !memberId) {
+    console.warn('[balanceService] Missing companyId or memberId — returning empty balance');
+    return {
+      earned: 0,
+      advances: 0,
+      remaining: 0,
+      periodLabel: periodLabel(period),
+      history: [],
+    };
+  }
 
-  // Suppress unused-import warnings for the above constants
-  void period;
+  const [balanceResp, historyResp] = await Promise.all([
+    getWorkerBalance(companyId, memberId),
+    getBalanceHistory(companyId, memberId),
+  ]);
 
-  return MOCK_BALANCE_DEFAULT;
+  const history: BalanceHistoryItem[] = (historyResp.transactions ?? []).map(mapTransaction);
+
+  return {
+    earned: balanceResp.total_earned ?? 0,
+    advances: balanceResp.total_advances ?? 0,
+    remaining: balanceResp.balance ?? 0,
+    periodLabel: periodLabel(period),
+    history,
+  };
 }

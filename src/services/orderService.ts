@@ -1,21 +1,27 @@
 // src/services/orderService.ts
-// Data access layer — cache-first via IndexedDB + optimistic mutations via SyncQueue.
+// Data access layer — cache-first via IndexedDB + real API mutations.
 // Source: DAD_Global_Data_Layer.md §6 Data Flow, §7 Sync Strategy
 
 import type { OrderDetail, DisputeResponsePayload } from '@/types/order.types';
-import { MOCK_ORDER_MAP, MOCK_ORDER_IN_PROGRESS } from './MockData';
-import { orderRepository, timeLogRepository, orderPhotoRepository, syncQueueRepository } from '@/db/repositories';
+import type { TaskStatus } from '@/types/task.types';
+import {
+  orderRepository,
+  timeLogRepository,
+  orderPhotoRepository,
+  syncQueueRepository,
+} from '@/db/repositories';
 import {
   toLocalOrder,
   toLocalTimeLogEntry,
-  toLocalOrderPhoto,
   fromLocalOrder,
   fromLocalTimeLogToTimeLog,
   fromLocalOrderPhoto,
 } from '@/db/mappers';
 import type { SyncQueueItem } from '@/types/db.types';
-
-const delay = () => new Promise((r) => setTimeout(r, 600));
+import { getOrder as apiGetOrder, signalWorkerStart, signalWorkerDone } from '@/api/ordersApi';
+import type { OrderResponse } from '@/api/ordersApi';
+import { getOrderTimelogs } from '@/api/timelogsApi';
+import type { TimeLogResponse } from '@/api/timelogsApi';
 
 function makeSyncItem(
   partial: Omit<SyncQueueItem, 'id' | 'createdAt' | 'lastAttemptAt' | 'retryCount' | 'error'>
@@ -30,13 +36,78 @@ function makeSyncItem(
   };
 }
 
+// ─── API → domain mappers ─────────────────────────────────────────────────────
+
+function mapApiStatusToUi(apiStatus: OrderResponse['status'], dueDate: string | null): TaskStatus {
+  if (apiStatus === 'in_review') return 'checking';
+  if (apiStatus === 'blocked') return 'in_progress';
+  if ((apiStatus === 'new' || apiStatus === 'in_progress') && dueDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(dueDate) < today) return 'overdue';
+  }
+  return apiStatus as TaskStatus;
+}
+
+function mapApiOrderToOrderDetail(
+  order: OrderResponse,
+  timeLogs: TimeLogResponse[],
+): OrderDetail {
+  const status = mapApiStatusToUi(order.status, order.due_date ?? null);
+
+  const canAddTime = ['new', 'in_progress', 'overdue'].includes(status);
+  const canAddPhotos = status !== 'done';
+  const canReportIssue = !['done', 'checking'].includes(status);
+
+  let ctaAction: OrderDetail['ctaAction'] = null;
+  if (status === 'new') ctaAction = 'start';
+  else if (status === 'in_progress' || status === 'overdue') ctaAction = 'complete';
+
+  const mappedLogs = timeLogs.map((tl) => ({
+    id: tl.id,
+    date: tl.work_date,
+    netHours: tl.net_hours,
+    workStart: tl.start_time?.slice(0, 5) ?? '00:00',
+    workEnd: tl.end_time?.slice(0, 5) ?? '00:00',
+    breaks: [] as Array<{ start: string; end: string }>,
+    isOvertime: tl.overtime_hours > 0,
+    overtimeHours: tl.overtime_hours || undefined,
+    unitsCompleted: tl.quantity_done ?? undefined,
+    isReadOnly: true,
+  }));
+
+  const totalHours = mappedLogs.reduce((sum, l) => sum + l.netHours, 0);
+
+  return {
+    id: order.id,
+    number: order.order_number ?? order.id.slice(0, 6),
+    name: order.title,
+    status,
+    deadline: order.due_date ?? order.order_date,
+    amount: order.unit_rate_snapshot ?? 0,
+    notes: order.notes ?? order.description ?? '',
+    location: {
+      address: order.address ?? '',
+    },
+    timeLogs: mappedLogs,
+    totalHours,
+    photos: [],            // photos fetched separately from IndexedDB
+    photosAddedToday: 0,
+    canAddTime,
+    canAddPhotos,
+    canReportIssue,
+    ctaAction,
+  };
+}
+
+// ─── Service functions ────────────────────────────────────────────────────────
+
 /**
  * Fetches full order details for the Order Hub.
  * Cache-first: reads from IndexedDB if TTL is fresh.
- * Cold start: fetches from API (mock), saves order + timeLogs + photos to DB.
+ * Cold start: fetches from real API, saves order + timeLogs + photos to DB.
  *
- * TODO (real API): Replace mock fetch with:
- *   fetch(`/api/v1/orders/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+ * REAL API: GET /orders/orders/{order_id} + GET /timelogs/orders/{order_id}/timelogs
  */
 export async function fetchOrderById(id: string): Promise<OrderDetail> {
   const orderRepo = orderRepository.forOrder(id);
@@ -57,68 +128,66 @@ export async function fetchOrderById(id: string): Promise<OrderDetail> {
     }
   }
 
-  // ── Cache MISS — fetch from API (mock) ────────────────────────────────────
+  // ── Cache MISS — fetch from real API ──────────────────────────────────────
   console.debug('[orderService] Cache MISS — fetching order', id);
-  await delay();
-  const order = MOCK_ORDER_MAP[id] ?? MOCK_ORDER_IN_PROGRESS;
+
+  const [orderResp, timelogsResp] = await Promise.all([
+    apiGetOrder(id),
+    getOrderTimelogs(id),
+  ]);
+
+  const order = mapApiOrderToOrderDetail(orderResp, timelogsResp.items);
 
   // Persist order to DB
   await orderRepository.save(toLocalOrder(order));
   await orderRepo.markFetched();
 
-  // Persist time logs (from the OrderDetail.timeLogs)
-  if (order.timeLogs.length > 0) {
+  // Persist time logs from API
+  if (timelogsResp.items.length > 0) {
     await timeLogRepository.saveMany(
-      order.timeLogs.map(tl => toLocalTimeLogEntry({
+      timelogsResp.items.map((tl) => toLocalTimeLogEntry({
         id: tl.id,
-        orderId: id,
-        workerId: 'worker-001',
-        logDate: tl.date,
-        workStart: tl.workStart,
-        workEnd: tl.workEnd,
-        breaks: tl.breaks.map((b, i) => ({ id: `b-${i}`, breakStart: b.start, breakEnd: b.end })),
-        netHours: tl.netHours,
+        orderId: tl.order_id,
+        workerId: tl.member_id,
+        logDate: tl.work_date,
+        workStart: tl.start_time?.slice(0, 5) ?? '00:00',
+        workEnd: tl.end_time?.slice(0, 5) ?? '00:00',
+        breaks: [],
+        netHours: tl.net_hours,
         syncStatus: 'synced',
-        unitsCompleted: tl.unitsCompleted,
+        unitsCompleted: tl.quantity_done ?? undefined,
       }))
     );
     await timeLogRepo.markFetched();
-  }
-
-  // Persist photos
-  if (order.photos.length > 0) {
-    await orderPhotoRepository.saveMany(
-      order.photos.map(p => toLocalOrderPhoto(p, id))
-    );
   }
 
   return order;
 }
 
 /**
- * Updates order status (optimistic UI + SyncQueue).
- * Status change is written to DB immediately; background sync flushes to API.
+ * Updates order status via real API.
+ * start → POST /orders/orders/{id}/worker-start
+ * complete → POST /orders/orders/{id}/worker-done
+ *
+ * On success: applies optimistic DB update + invalidates cache.
  */
 export async function updateOrderStatus(
   id: string,
   action: 'start' | 'complete',
 ): Promise<{ status: string }> {
+  if (action === 'start') {
+    await signalWorkerStart(id);
+  } else {
+    await signalWorkerDone(id);
+  }
+
   const newStatus = action === 'start' ? 'in_progress' : 'checking';
 
-  // ── Optimistic update to IndexedDB ─────────────────────────────────────────
-  await orderRepository.updateStatus(id, newStatus as OrderDetail['status']);
-
-  // Invalidate cache so next fetch re-reads from DB
+  // Apply optimistic update to DB + invalidate cache
+  await orderRepository.updateStatus(id, newStatus as TaskStatus);
   await orderRepository.forOrder(id).invalidateCache();
 
-  // ── Enqueue to SyncQueue ───────────────────────────────────────────────────
-  await syncQueueRepository.enqueue(makeSyncItem({
-    entityType: 'order',
-    action: 'update',
-    payload: { id, status: newStatus, action },
-  }));
-
-  console.debug('[orderService] Status updated optimistically:', id, '→', newStatus);
+  console.debug('[orderService] Status updated via API:', id, '→', newStatus);
   return { status: newStatus };
 }
 
@@ -130,7 +199,6 @@ export async function uploadOrderPhoto(
   orderId: string,
   file: File,
 ): Promise<{ id: string; url: string; thumbnailUrl: string }> {
-  await delay();
   const blobUrl = URL.createObjectURL(file);
   const tempId = `temp-photo-${Date.now()}`;
 
@@ -151,7 +219,7 @@ export async function uploadOrderPhoto(
   // Increment photo count on order
   await orderRepository.incrementPhotosToday(orderId);
 
-  // Enqueue upload to SyncQueue
+  // Enqueue upload to SyncQueue (SyncService handles multipart upload)
   await syncQueueRepository.enqueue(makeSyncItem({
     entityType: 'orderPhoto',
     action: 'create',
@@ -169,13 +237,11 @@ export async function deleteOrderPhoto(
   orderId: string,
   photoId: string,
 ): Promise<void> {
-  await delay();
-
   // Remove from DB
   await orderPhotoRepository.delete(photoId);
   await orderRepository.decrementPhotosToday(orderId);
 
-  // If it was a temp (unsynced) photo, no need to enqueue — remove from SyncQueue instead
+  // If temp (unsynced), remove from SyncQueue instead
   const isTempPhoto = photoId.startsWith('temp-photo-');
   if (!isTempPhoto) {
     await syncQueueRepository.enqueue(makeSyncItem({
@@ -189,15 +255,14 @@ export async function deleteOrderPhoto(
 /**
  * Submits Worker's response to a dispute.
  * Applies optimistic status update to DB; enqueues to SyncQueue.
+ * NOTE: Dispute response endpoint integration is Phase 2 (pending backend spec).
  */
 export async function submitDisputeResponse(
   id: string,
   payload: DisputeResponsePayload,
 ): Promise<void> {
-  await delay();
-
   const newStatus = payload.action === 'accept' ? 'done' : 'dispute';
-  await orderRepository.updateStatus(id, newStatus as OrderDetail['status']);
+  await orderRepository.updateStatus(id, newStatus as TaskStatus);
   await orderRepository.forOrder(id).invalidateCache();
 
   await syncQueueRepository.enqueue(makeSyncItem({

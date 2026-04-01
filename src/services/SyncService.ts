@@ -21,27 +21,13 @@ import { syncQueueRepository } from '../db/repositories/SyncQueueRepository'
 import { orderPhotoRepository } from '../db/repositories/OrderPhotoRepository'
 import { getSyncRetryDelay, MAX_SYNC_RETRIES } from '../types/db.types'
 import type { SyncQueueItem } from '../types/db.types'
+import { ACTIVE_BASE_URL, ACTIVE_API_KEY } from '../constants/apiConstants'
+import { getAuthState } from '../stores/authStore'
 
 // ─── Module-level sync lock fallback ──────────────────────────────────────────
 // navigator.locks is available in Chrome 69+ and Safari 15.4+
 // Fallback for older WebView versions: module-level flag.
 let _isSyncing = false
-
-// ─── Auth token (in-memory only — NEVER persisted, DAD §13) ──────────────────
-let _authToken: string | null = null
-
-/** Inject the auth token for API calls. Called after login / re-auth. */
-export function setAuthToken(token: string): void {
-  _authToken = token
-}
-
-export function clearAuthToken(): void {
-  _authToken = null
-}
-
-// ─── API base URL ─────────────────────────────────────────────────────────────
-// TODO: Replace with actual API base when backend delivers spec (Q1)
-const API_BASE = '/api/v1'
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -50,14 +36,17 @@ async function apiRequest(
   path: string,
   body?: unknown
 ): Promise<Response> {
+  const { accessToken } = getAuthState()
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-API-Key': ACTIVE_API_KEY,
   }
-  if (_authToken) {
-    headers['Authorization'] = `Bearer ${_authToken}`
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`
   }
 
-  return fetch(`${API_BASE}${path}`, {
+  return fetch(`${ACTIVE_BASE_URL}${path}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -195,10 +184,13 @@ async function syncPhotoUpload(item: SyncQueueItem): Promise<boolean> {
   const formData = new FormData()
   formData.append('photo', blob, 'upload.jpg')
 
-  const headers: Record<string, string> = {}
-  if (_authToken) headers['Authorization'] = `Bearer ${_authToken}`
+  const { accessToken } = getAuthState()
+  const headers: Record<string, string> = {
+    'X-API-Key': ACTIVE_API_KEY,
+  }
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
 
-  const response = await fetch(`${API_BASE}/orders/${payload.orderId}/photos`, {
+  const response = await fetch(`${ACTIVE_BASE_URL}/orders/${payload.orderId}/photos`, {
     method: 'POST',
     headers,
     body: formData,
